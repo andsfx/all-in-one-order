@@ -7,7 +7,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const CASHI_API_URL = 'https://api.cashi.id/v1';
+const CASHI_API_URL = 'https://cashi.id/api';
 const CASHI_API_KEY = Deno.env.get('CASHI_API_KEY') || '';
 
 interface PaymentRequest {
@@ -49,22 +49,15 @@ serve(async (req) => {
     }
 
     // Create payment via Cashi.id API
-    const cashiResponse = await fetch(`${CASHI_API_URL}/payments`, {
+    const cashiResponse = await fetch(`${CASHI_API_URL}/create-order`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${CASHI_API_KEY}`,
+        'x-api-key': CASHI_API_KEY,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        external_id: order_id,
+        order_id: order_id,
         amount: amount,
-        payment_method: 'QRIS',
-        customer_name: customer_name,
-        customer_email: customer_email || `${order_id}@order-kopi.app`,
-        description: `Order Kopi - ${order_id}`,
-        callback_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/cashi-webhook`,
-        success_redirect_url: `${Deno.env.get('APP_URL')}/order/${order_id}`,
-        failure_redirect_url: `${Deno.env.get('APP_URL')}/order/${order_id}`,
       }),
     });
 
@@ -81,6 +74,8 @@ serve(async (req) => {
     }
 
     const paymentData = await cashiResponse.json();
+    
+    console.log('Cashi.id response:', paymentData);
 
     // Update order with payment details
     const supabase = createClient(
@@ -91,8 +86,8 @@ serve(async (req) => {
     const { error: updateError } = await supabase
       .from('orders')
       .update({
-        payment_id: paymentData.id,
-        payment_url: paymentData.qr_url || paymentData.payment_url,
+        payment_id: paymentData.order_id,
+        payment_url: paymentData.qrUrl, // Cashi.id returns base64 image in qrUrl
       })
       .eq('id', order_id);
 
@@ -104,12 +99,11 @@ serve(async (req) => {
     // Return payment details
     return new Response(
       JSON.stringify({
-        success: true,
-        payment_id: paymentData.id,
-        payment_url: paymentData.qr_url || paymentData.payment_url,
-        qr_string: paymentData.qr_string,
+        success: paymentData.success,
+        payment_id: paymentData.order_id,
+        payment_url: paymentData.qrUrl, // Base64 QRIS image
+        checkout_url: paymentData.checkout_url,
         amount: paymentData.amount,
-        status: paymentData.status,
         expires_at: paymentData.expires_at,
       }),
       { 
