@@ -28,8 +28,22 @@ export function useStoreStatus() {
 
     // Manual override - handle both boolean and string
     const manualOverride = settings.is_open;
-    if (manualOverride === false || manualOverride === 'false') return false;
-    if (manualOverride === true || manualOverride === 'true') return true;
+    
+    // Debug logging
+    console.log('Store Status Debug:', {
+      manualOverride,
+      type: typeof manualOverride,
+      settings,
+    });
+    
+    if (manualOverride === false || manualOverride === 'false') {
+      console.log('Store manually closed');
+      return false;
+    }
+    if (manualOverride === true || manualOverride === 'true') {
+      console.log('Store manually opened');
+      return true;
+    }
 
     const openHour = settings.open_hour || '07:00';
     const closeHour = settings.close_hour || '22:00';
@@ -44,8 +58,19 @@ export function useStoreStatus() {
     const [closeH, closeM] = closeHour.split(':').map(Number);
     const openMin = openH * 60 + openM;
     const closeMin = closeH * 60 + closeM;
+    
+    const isOpenNow = wibMinutes >= openMin && wibMinutes < closeMin;
+    
+    console.log('Store Hours Check:', {
+      openHour,
+      closeHour,
+      wibMinutes,
+      openMin,
+      closeMin,
+      isOpenNow,
+    });
 
-    return wibMinutes >= openMin && wibMinutes < closeMin;
+    return isOpenNow;
   }
 
   return {
