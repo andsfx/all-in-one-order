@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Palette, QrCode, Lock, Trash2, Info, Upload, Eye, EyeOff, Loader2, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Palette, QrCode, Lock, Trash2, Info, Upload, Eye, EyeOff, Loader2, HelpCircle, Phone } from 'lucide-react';
 import { useStore } from '../lib/useStore';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
@@ -20,6 +20,9 @@ export default function AdminSettings() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+
+  // WhatsApp state
+  const [waNumber, setWaNumber] = useState(settings.admin_whatsapp || '');
 
   // Reset state
   const [resetConfirm, setResetConfirm] = useState('');
@@ -194,6 +197,36 @@ export default function AdminSettings() {
                 <p className="text-xs text-text-muted">Format: JPG, PNG. Maks 5MB</p>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Section: WhatsApp Admin */}
+        <section className="bg-white rounded-2xl p-5 shadow-[var(--shadow-card)]">
+          <div className="flex items-center gap-2 mb-4">
+            <Phone size={20} className="text-primary" />
+            <h2 className="font-bold text-text-primary">WhatsApp Admin</h2>
+          </div>
+          <p className="text-xs text-text-muted mb-3">
+            Nomor WhatsApp untuk menerima notifikasi pesanan dan dihubungi customer.
+            Format: 628xxxxxxxxxx (tanpa + atau spasi)
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="tel"
+              value={waNumber}
+              onChange={(e) => setWaNumber(e.target.value.replace(/[^0-9]/g, ''))}
+              placeholder="628123456789"
+              className="flex-1 px-4 py-2.5 rounded-xl bg-surface-secondary text-sm text-text-primary placeholder:text-text-muted outline-none focus:ring-2 focus:ring-primary/20 border border-transparent focus:border-primary/30"
+            />
+            <button
+              onClick={async () => {
+                await updateSetting('admin_whatsapp', waNumber);
+                addToast('Nomor WhatsApp disimpan');
+              }}
+              className="bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-semibold active:scale-95 transition-transform"
+            >
+              Simpan
+            </button>
           </div>
         </section>
 

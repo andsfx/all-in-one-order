@@ -24,6 +24,7 @@ export default function SetupWizard() {
   const [uploadingQris, setUploadingQris] = useState(false);
   const [openHour, setOpenHour] = useState(settings.open_hour || '07:00');
   const [closeHour, setCloseHour] = useState(settings.close_hour || '22:00');
+  const [waNumber, setWaNumber] = useState('');
   const [branchName, setBranchName] = useState('');
   const [branchAddress, setBranchAddress] = useState('');
   const [finishing, setFinishing] = useState(false);
@@ -62,6 +63,7 @@ export default function SetupWizard() {
   async function handleNext() {
     if (step === 0) {
       await updateSetting('store_name', storeName);
+      if (waNumber) await updateSetting('admin_whatsapp', waNumber);
     } else if (step === 2) {
       await updateSetting('open_hour', openHour);
       await updateSetting('close_hour', closeHour);
@@ -131,6 +133,17 @@ export default function SetupWizard() {
               className="w-full px-4 py-3 rounded-xl bg-surface-secondary text-sm text-text-primary outline-none focus:ring-2 focus:ring-primary/20 border border-transparent focus:border-primary/30 text-center font-semibold"
               placeholder="Nama toko kamu"
             />
+            <div className="mt-4">
+              <label className="text-sm font-medium text-text-secondary block mb-1.5">Nomor WhatsApp Admin</label>
+              <input
+                type="tel"
+                value={waNumber}
+                onChange={(e) => setWaNumber(e.target.value.replace(/[^0-9]/g, ''))}
+                placeholder="628123456789"
+                className="w-full px-4 py-3 rounded-xl bg-surface-secondary text-sm text-text-primary placeholder:text-text-muted outline-none focus:ring-2 focus:ring-primary/20 border border-transparent focus:border-primary/30"
+              />
+              <p className="text-xs text-text-muted mt-1">Format: 628xxxxxxxxxx (tanpa + atau spasi)</p>
+            </div>
           </div>
         )}
 

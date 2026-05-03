@@ -13,6 +13,7 @@ export function StoreProvider({ children }) {
     close_hour: '22:00',
     is_open: 'true',
     setup_completed: 'false',
+    admin_whatsapp: '',
   });
   const [loading, setLoading] = useState(true);
 

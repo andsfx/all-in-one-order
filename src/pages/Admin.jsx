@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Clock, Coffee, Package, CheckCircle, ChevronRight, CreditCard, Loader2, Ban, Check, UtensilsCrossed, LogOut, BarChart3, Megaphone, Store, MapPin, Settings } from 'lucide-react';
 import { useOrders } from '../lib/OrderContext';
 import { useAuth } from '../lib/useAuth';
+import { useStore } from '../lib/useStore';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
 
@@ -20,6 +21,7 @@ const STATUS_CONFIG = {
 export default function Admin() {
   const { orders, loading, updateStatus } = useOrders();
   const { signOut } = useAuth();
+  const { settings } = useStore();
   const { addToast } = useToast();
   const [filter, setFilter] = useState('Semua');
   const [confirming, setConfirming] = useState(null);
@@ -312,6 +314,13 @@ export default function Admin() {
                               });
                               if (error) throw error;
                               addToast('Pembayaran dikonfirmasi');
+                              // Open WhatsApp notification
+                              const waNum = settings.admin_whatsapp;
+                              if (waNum) {
+                                const items = order.items.map(i => `• ${i.product.name} x${i.qty}`).join('\n');
+                                const msg = `*Pesanan Baru Dikonfirmasi!*\n\nOrder: ${order.id}\nCustomer: ${order.customer.name}\n\n${items}\n\nTotal: Rp ${order.total.toLocaleString('id-ID')}`;
+                                window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`, '_blank');
+                              }
                             } catch {
                               addToast('Gagal konfirmasi pembayaran', 'error');
                             } finally {

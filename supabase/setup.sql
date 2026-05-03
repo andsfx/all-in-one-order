@@ -235,7 +235,8 @@ insert into store_settings (key, value) values
   ('open_hour', '07:00'),
   ('close_hour', '22:00'),
   ('is_open', 'true'),
-  ('setup_completed', 'false');
+  ('setup_completed', 'false'),
+  ('admin_whatsapp', '');
 
 -- ============================================
 -- 10. Storage Buckets
