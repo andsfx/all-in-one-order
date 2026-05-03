@@ -38,10 +38,13 @@ export default function Checkout() {
     submittingRef.current = true;
     setSubmitting(true);
     try {
+      const savedBranch = localStorage.getItem('selected-branch');
+      const branchId = savedBranch ? JSON.parse(savedBranch).id : null;
       const order = await placeOrder(items, {
         name: name.trim(),
         note: note.trim(),
         paymentMethod,
+        branchId,
       });
       clearCart();
       navigate(`/order/${order.id}`);
@@ -70,7 +73,7 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-8">
+    <div className="page-enter min-h-screen bg-white pb-8">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white border-b border-border-light px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center gap-3">

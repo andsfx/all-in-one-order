@@ -10,6 +10,8 @@ import Home from './pages/Home';
 
 const Admin = lazy(() => import('./pages/Admin'));
 const AdminMenu = lazy(() => import('./pages/AdminMenu'));
+const AdminReport = lazy(() => import('./pages/AdminReport'));
+const AdminPromo = lazy(() => import('./pages/AdminPromo'));
 const Checkout = lazy(() => import('./pages/Checkout'));
 const OrderStatus = lazy(() => import('./pages/OrderStatus'));
 const Login = lazy(() => import('./pages/Login'));
@@ -64,6 +66,8 @@ function App() {
                 {/* Protected Admin */}
                 <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
                 <Route path="/admin/menu" element={<ProtectedRoute><AdminMenu /></ProtectedRoute>} />
+                <Route path="/admin/report" element={<ProtectedRoute><AdminReport /></ProtectedRoute>} />
+                <Route path="/admin/promo" element={<ProtectedRoute><AdminPromo /></ProtectedRoute>} />
 
                     <Route path="*" element={<NotFound />} />
                 </Routes>

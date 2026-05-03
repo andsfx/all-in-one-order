@@ -105,6 +105,7 @@ export function OrderProvider({ children }) {
         total,
         status: 'pending_payment',
         payment_method: customerInfo.paymentMethod || 'qris',
+        branch_id: customerInfo.branchId || null,
       });
 
     if (orderError) {

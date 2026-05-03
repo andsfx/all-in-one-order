@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Clock, Coffee, Package, CheckCircle, ChevronRight, CreditCard, Loader2, Ban, Check, UtensilsCrossed, LogOut } from 'lucide-react';
+import { ArrowLeft, Clock, Coffee, Package, CheckCircle, ChevronRight, CreditCard, Loader2, Ban, Check, UtensilsCrossed, LogOut, BarChart3, Megaphone, Store } from 'lucide-react';
 import { useOrders } from '../lib/OrderContext';
 import { useAuth } from '../lib/useAuth';
 import { useToast } from '../components/Toast';
@@ -24,6 +24,40 @@ export default function Admin() {
   const [filter, setFilter] = useState('Semua');
   const [confirming, setConfirming] = useState(null);
 
+  // Store settings
+  const [storeOpen, setStoreOpen] = useState(true);
+  const [openHour, setOpenHour] = useState('07:00');
+  const [closeHour, setCloseHour] = useState('22:00');
+  const [savingStore, setSavingStore] = useState(false);
+
+  useEffect(() => {
+    supabase.from('store_settings').select('*').then(({ data }) => {
+      if (!data) return;
+      for (const row of data) {
+        if (row.key === 'is_open') setStoreOpen(row.value === 'true');
+        if (row.key === 'open_hour') setOpenHour(row.value);
+        if (row.key === 'close_hour') setCloseHour(row.value);
+      }
+    });
+  }, []);
+
+  async function handleToggleStore() {
+    const newVal = !storeOpen;
+    setStoreOpen(newVal);
+    await supabase.from('store_settings').update({ value: String(newVal) }).eq('key', 'is_open');
+    addToast(newVal ? 'Toko dibuka' : 'Toko ditutup');
+  }
+
+  async function handleSaveHours() {
+    setSavingStore(true);
+    await Promise.all([
+      supabase.from('store_settings').update({ value: openHour }).eq('key', 'open_hour'),
+      supabase.from('store_settings').update({ value: closeHour }).eq('key', 'close_hour'),
+    ]);
+    setSavingStore(false);
+    addToast('Jam operasional disimpan');
+  }
+
   const filtered = filter === 'Semua' ? orders : orders.filter((o) => o.status === filter);
 
   function getCount(status) {
@@ -32,7 +66,7 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-8">
+    <div className="page-enter min-h-screen bg-white pb-8">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white border-b border-border-light px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center gap-3">
@@ -52,10 +86,10 @@ export default function Admin() {
 
       <main className="max-w-lg mx-auto px-4 mt-4">
         {/* Quick Actions */}
-        <section className="mb-4">
+        <section className="mb-4 space-y-3">
           <Link
             to="/admin/menu"
-            className="w-full bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3 active:scale-[0.98] transition-transform"
+            className="w-full bg-white rounded-2xl p-4 shadow-[var(--shadow-card)] flex items-center gap-3 active:scale-[0.98] transition-transform"
           >
             <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
               <UtensilsCrossed size={20} className="text-primary" />
@@ -66,6 +100,82 @@ export default function Admin() {
             </div>
             <ChevronRight size={16} className="text-text-muted" />
           </Link>
+          <Link
+            to="/admin/report"
+            className="w-full bg-white rounded-2xl p-4 shadow-[var(--shadow-card)] flex items-center gap-3 active:scale-[0.98] transition-transform"
+          >
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+              <BarChart3 size={20} className="text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-text-primary text-sm">Laporan Penjualan</p>
+              <p className="text-xs text-text-muted">Revenue, top items, statistik harian</p>
+            </div>
+            <ChevronRight size={16} className="text-text-muted" />
+          </Link>
+          <Link
+            to="/admin/promo"
+            className="w-full bg-white rounded-2xl p-4 shadow-[var(--shadow-card)] flex items-center gap-3 active:scale-[0.98] transition-transform"
+          >
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+              <Megaphone size={20} className="text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-text-primary text-sm">Kelola Promo</p>
+              <p className="text-xs text-text-muted">Tambah, edit, hapus banner promo</p>
+            </div>
+            <ChevronRight size={16} className="text-text-muted" />
+          </Link>
+        </section>
+
+        {/* Jam Operasional */}
+        <section className="mb-4 bg-white rounded-2xl p-4 shadow-[var(--shadow-card)]">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Store size={18} className="text-primary" />
+              <h2 className="font-semibold text-text-primary text-sm">Jam Operasional</h2>
+            </div>
+            <button
+              onClick={handleToggleStore}
+              className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${storeOpen ? 'bg-primary' : 'bg-border'}`}
+              aria-label={storeOpen ? 'Tutup toko' : 'Buka toko'}
+            >
+              <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${storeOpen ? 'translate-x-5' : 'translate-x-0'}`} />
+            </button>
+          </div>
+
+          <div className={`flex items-center gap-3 ${!storeOpen ? 'opacity-50 pointer-events-none' : ''}`}>
+            <div className="flex-1">
+              <label className="text-xs font-medium text-text-muted block mb-1">Buka</label>
+              <input
+                type="time"
+                value={openHour}
+                onChange={(e) => setOpenHour(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-surface-secondary text-sm text-text-primary outline-none focus:ring-2 focus:ring-primary/20 border border-transparent focus:border-primary/30"
+              />
+            </div>
+            <span className="text-text-muted mt-5">—</span>
+            <div className="flex-1">
+              <label className="text-xs font-medium text-text-muted block mb-1">Tutup</label>
+              <input
+                type="time"
+                value={closeHour}
+                onChange={(e) => setCloseHour(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-surface-secondary text-sm text-text-primary outline-none focus:ring-2 focus:ring-primary/20 border border-transparent focus:border-primary/30"
+              />
+            </div>
+            <button
+              onClick={handleSaveHours}
+              disabled={savingStore}
+              className="mt-5 bg-primary text-white px-4 py-2 rounded-xl text-sm font-semibold active:scale-95 transition-transform disabled:opacity-60"
+            >
+              {savingStore ? '...' : 'Simpan'}
+            </button>
+          </div>
+
+          <p className={`text-xs mt-2 font-medium ${storeOpen ? 'text-success' : 'text-error'}`}>
+            {storeOpen ? `Toko buka ${openHour} - ${closeHour}` : 'Toko sedang ditutup manual'}
+          </p>
         </section>
 
         {/* Filter Tabs */}

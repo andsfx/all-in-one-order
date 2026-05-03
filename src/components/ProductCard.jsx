@@ -16,7 +16,7 @@ export default function ProductCard({ product, onClick }) {
       tabIndex={0}
       onClick={() => onClick(product)}
       onKeyDown={handleKeyDown}
-      className="bg-white rounded-2xl overflow-hidden shadow-[var(--shadow-card)] transition-shadow duration-200 hover:shadow-[var(--shadow-elevated)] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+      className="bg-white rounded-2xl overflow-hidden shadow-[var(--shadow-card)] transition-all duration-200 hover:shadow-[var(--shadow-elevated)] hover:-translate-y-0.5 active:scale-[0.97] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
     >
       <div className="relative">
         <img
@@ -36,7 +36,7 @@ export default function ProductCard({ product, onClick }) {
           </span>
           <button
             onClick={(e) => { e.stopPropagation(); onClick(product); }}
-            className="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center active:scale-90 transition-transform duration-150"
+            className="bg-primary/10 text-primary rounded-full w-8 h-8 flex items-center justify-center hover:bg-primary hover:text-white active:scale-90 transition-all duration-150"
             aria-label={`Tambah ${product.name}`}
           >
             <Plus size={14} />

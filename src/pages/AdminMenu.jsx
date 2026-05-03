@@ -127,7 +127,7 @@ export default function AdminMenu() {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-8">
+    <div className="page-enter min-h-screen bg-white pb-8">
       <header className="sticky top-0 z-40 bg-white border-b border-border-light px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center gap-3">
           <Link to="/admin" className="p-1.5 rounded-full bg-surface-secondary text-text-secondary active:scale-95 transition-transform" aria-label="Kembali">

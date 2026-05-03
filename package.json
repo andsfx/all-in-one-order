@@ -30,6 +30,7 @@
     "postcss": "^8.5.10",
     "supabase": "^2.98.0",
     "tailwindcss": "^4.2.3",
-    "vite": "^8.0.9"
+    "vite": "^8.0.9",
+    "vite-plugin-pwa": "^1.2.0"
   }
 }
