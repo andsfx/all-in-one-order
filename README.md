@@ -34,6 +34,7 @@
 - Kelola cabang toko
 - Kelola promo/banner
 - Laporan penjualan harian (revenue, top items, grafik per jam)
+- **Audit Log:** Track semua perubahan order (siapa, kapan, apa yang diubah)
 - Pengaturan toko (nama, logo, QRIS, jam operasional)
 - Buka/tutup toko manual
 - Ganti password admin
@@ -46,8 +47,10 @@
 - **Session Token:** Setiap customer mendapat token unik untuk tracking order
 - **Order Isolation:** Customer hanya bisa akses order mereka sendiri
 - **Rate Limiting:** Maksimal 5 order per jam untuk mencegah spam
+- **Token Auto-Refresh:** Token otomatis extend saat user aktif (prevent expire mid-session)
+- **Audit Trail:** Semua perubahan order tercatat (immutable, admin-only access)
 - **RLS Policies:** Database-level security dengan Row Level Security
-- **Token Expiry:** Token otomatis expire setelah 24 jam
+- **Token Expiry:** Token otomatis expire setelah 24 jam (atau extend jika aktif)
 
 ---
 
