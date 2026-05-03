@@ -118,6 +118,42 @@ export function OrderProvider({ children }) {
       throw new Error('Gagal menyimpan order: ' + orderError.message);
     }
 
+    // If payment method is QRIS, create Cashi.id payment
+    let paymentUrl = null;
+    let paymentId = null;
+    
+    if (customerInfo.paymentMethod === 'qris') {
+      try {
+        const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-cashi-payment', {
+          body: {
+            order_id: orderId,
+            amount: total,
+            customer_name: customerInfo.name,
+          },
+        });
+
+        if (paymentError) {
+          console.error('Failed to create Cashi payment:', paymentError);
+          // Continue without payment URL - will show error to user
+        } else if (paymentData) {
+          paymentUrl = paymentData.qr_url;
+          paymentId = paymentData.payment_id;
+          
+          // Update order with payment details
+          await supabase
+            .from('orders')
+            .update({
+              payment_id: paymentId,
+              payment_url: paymentUrl,
+            })
+            .eq('id', orderId);
+        }
+      } catch (error) {
+        console.error('Error creating Cashi payment:', error);
+        // Continue without payment URL
+      }
+    }
+
     // Insert order items
     const items = cartItems.map((item) => ({
       order_id: orderId,

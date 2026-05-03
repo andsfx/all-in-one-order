@@ -181,7 +181,7 @@ export default function OrderStatus() {
                 </p>
                 <div className="flex justify-center">
                   <img
-                    src={settings.qris_image || '/qris.jpg'}
+                    src={order.paymentUrl || settings.qris_image || '/qris.jpg'}
                     alt="QRIS Payment"
                     className="w-56 h-56 object-contain rounded-xl border border-border"
                   />
@@ -193,7 +193,10 @@ export default function OrderStatus() {
                   </p>
                 </div>
                 <p className="text-xs text-text-muted text-center mt-3">
-                  Setelah bayar, tunggu admin mengkonfirmasi pembayaran kamu.
+                  {order.paymentUrl ? 
+                    'Pembayaran akan otomatis terkonfirmasi setelah kamu scan QRIS.' :
+                    'Setelah bayar, tunggu admin mengkonfirmasi pembayaran kamu.'
+                  }
                   Halaman ini akan otomatis update.
                 </p>
               </>
