@@ -1,16 +1,300 @@
-# React + Vite
+# Order Kopi
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Aplikasi pemesanan kopi online untuk coffee shop — siap pakai, mudah dikustomisasi.**
 
-Currently, two official plugins are available:
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+<!-- Screenshot -->
+<!-- ![Order Kopi Screenshot](screenshot.png) -->
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Fitur
 
-## Expanding the ESLint configuration
+### Pelanggan
+- Lihat menu dengan kategori dan pencarian
+- Pilih ukuran (Small/Regular/Large), suhu (Hot/Iced), dan level gula
+- Keranjang belanja dengan quantity adjustment
+- Checkout dengan QRIS atau bayar di kasir (cash)
+- Tracking status pesanan real-time (Bayar → Menunggu → Diproses → Siap → Selesai)
+- Estimasi waktu tunggu + posisi antrian
+- Rating & review setelah pesanan selesai
+- Share pesanan via WhatsApp
+- Pilih cabang toko
+- Banner promo dinamis
+- PWA — bisa di-install di HP
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Admin
+- Dashboard pesanan real-time dengan filter status
+- Update status pesanan (konfirmasi bayar → proses → siap → selesai)
+- Kelola menu (CRUD produk + kategori, upload foto)
+- Kelola cabang toko
+- Kelola promo/banner
+- Laporan penjualan harian (revenue, top items, grafik per jam)
+- Pengaturan toko (nama, logo, QRIS, jam operasional)
+- Buka/tutup toko manual
+- Ganti password admin
+- Reset data pesanan
+- Setup Wizard untuk konfigurasi awal
+- Notifikasi Telegram (opsional, via Edge Function)
+- Auto-cancel pesanan yang tidak dibayar (opsional, via Edge Function)
+
+---
+
+## Demo
+
+**Live Demo:** [https://order-kopi-app.netlify.app](https://order-kopi-app.netlify.app)
+
+---
+
+## Cara Setup
+
+### Prasyarat
+
+- [Node.js](https://nodejs.org) versi 18 atau lebih baru
+- Akun [Supabase](https://supabase.com) (gratis)
+- Akun [Netlify](https://netlify.com) (gratis, opsional untuk deploy)
+
+---
+
+### Langkah 1: Clone & Install
+
+```bash
+git clone <repo-url>
+cd order-kopi
+npm install
+```
+
+---
+
+### Langkah 2: Setup Database (Supabase)
+
+1. Buka [supabase.com](https://supabase.com) → buat project baru
+2. Tunggu project selesai dibuat (~1 menit)
+3. Buka **SQL Editor** (menu kiri)
+4. Klik **"New query"**
+5. Copy-paste **seluruh isi** file `supabase/setup.sql` ke editor
+6. Klik **"Run"** (atau Ctrl+Enter)
+7. Pastikan tidak ada error (hijau semua)
+
+> File `setup.sql` sudah mencakup semua tabel, fungsi, kebijakan keamanan, storage, dan data sample. Cukup jalankan sekali.
+
+---
+
+### Langkah 3: Buat Admin User
+
+1. Di Supabase Dashboard, buka **Authentication** → **Users**
+2. Klik **"Add user"** → **"Create new user"**
+3. Isi:
+   - **Email:** email kamu (contoh: admin@tokoku.com)
+   - **Password:** password yang kuat (minimal 6 karakter)
+   - Centang **"Auto Confirm"**
+4. Klik **"Create user"**
+
+> Email ini yang akan dipakai untuk login ke panel admin.
+
+---
+
+### Langkah 4: Ambil API Keys
+
+1. Di Supabase Dashboard, buka **Settings** → **API**
+2. Catat/copy:
+   - **Project URL** (contoh: `https://abcdefgh.supabase.co`)
+   - **anon public key** (string panjang yang dimulai dengan `eyJ...`)
+
+---
+
+### Langkah 5: Environment Variables
+
+```bash
+cp .env.example .env
+```
+
+Edit file `.env`, isi dengan data dari langkah 4:
+
+```env
+VITE_SUPABASE_URL=https://abcdefgh.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+---
+
+### Langkah 6: Jalankan Aplikasi
+
+```bash
+npm run dev
+```
+
+Buka [http://localhost:5173](http://localhost:5173) di browser.
+
+---
+
+### Langkah 7: Setup Toko
+
+1. Buka [http://localhost:5173/login](http://localhost:5173/login)
+2. Login dengan email + password admin yang dibuat di Langkah 3
+3. Ikuti **Setup Wizard**:
+   - Masukkan nama toko
+   - Upload gambar QRIS (untuk pembayaran)
+   - Atur jam operasional
+   - Tambahkan cabang pertama
+4. Klik **"Mulai Terima Pesanan"**
+5. Selesai! Toko siap menerima pesanan dari pelanggan.
+
+---
+
+## Deploy ke Netlify
+
+### Cara 1: Via CLI
+
+```bash
+npm install -g netlify-cli
+netlify login
+netlify init
+```
+
+Saat ditanya:
+- Build command: `npm run build`
+- Publish directory: `dist`
+
+Set environment variables di Netlify Dashboard → Site settings → Environment variables:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+Lalu deploy:
+
+```bash
+netlify deploy --prod
+```
+
+### Cara 2: Via GitHub (Auto Deploy)
+
+1. Push repo ke GitHub
+2. Di Netlify, klik **"Add new site"** → **"Import an existing project"**
+3. Pilih repo GitHub kamu
+4. Set build settings:
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+5. Tambahkan environment variables
+6. Klik **"Deploy site"**
+
+Setiap push ke branch `main` akan otomatis deploy.
+
+---
+
+## Deploy Edge Functions (Opsional)
+
+Edge Functions menyediakan fitur tambahan:
+- **confirm-payment** — Notifikasi Telegram saat pembayaran dikonfirmasi
+- **auto-cancel** — Otomatis batalkan pesanan yang tidak dibayar dalam 15 menit
+
+### Setup:
+
+```bash
+npx supabase login
+npx supabase link --project-ref YOUR_PROJECT_REF
+```
+
+Set secrets untuk Telegram (opsional):
+
+```bash
+npx supabase secrets set TELEGRAM_BOT_TOKEN=your-bot-token TELEGRAM_CHAT_ID=your-chat-id
+```
+
+Deploy functions:
+
+```bash
+npx supabase functions deploy confirm-payment --no-verify-jwt
+npx supabase functions deploy auto-cancel --no-verify-jwt
+```
+
+> **Catatan:** Untuk auto-cancel, setup Cron Job di Supabase Dashboard → Database → Extensions → pg_cron, atau panggil endpoint secara berkala.
+
+---
+
+## Struktur Project
+
+```
+order-kopi/
+├── public/              # Static assets (favicon, manifest, QRIS placeholder)
+├── src/
+│   ├── components/      # Komponen reusable (Cart, Toast, ProductCard, dll)
+│   ├── lib/             # Context, hooks, dan utility (Auth, Cart, Orders, Store)
+│   ├── pages/           # Halaman aplikasi
+│   │   ├── Home.jsx         # Menu pelanggan
+│   │   ├── Checkout.jsx     # Halaman checkout
+│   │   ├── OrderStatus.jsx  # Tracking pesanan real-time
+│   │   ├── Login.jsx        # Login admin
+│   │   ├── Admin.jsx        # Dashboard admin
+│   │   ├── AdminMenu.jsx    # Kelola menu
+│   │   ├── AdminBranch.jsx  # Kelola cabang
+│   │   ├── AdminPromo.jsx   # Kelola promo
+│   │   ├── AdminReport.jsx  # Laporan penjualan
+│   │   ├── AdminSettings.jsx # Pengaturan toko
+│   │   └── SetupWizard.jsx  # Setup awal toko
+│   ├── App.jsx          # Router & providers
+│   ├── main.jsx         # Entry point
+│   └── index.css        # Tailwind + custom CSS variables
+├── supabase/
+│   ├── setup.sql        # Database setup (jalankan di SQL Editor)
+│   └── functions/       # Edge Functions (opsional)
+├── .env.example         # Template environment variables
+├── netlify.toml         # Konfigurasi Netlify
+├── package.json
+└── vite.config.js
+```
+
+---
+
+## Kustomisasi
+
+### Ganti Warna Utama
+
+Edit `src/index.css`, cari bagian CSS variables:
+
+```css
+--color-primary: oklch(0.45 0.15 160); /* Hijau tua */
+```
+
+Ganti dengan warna yang kamu inginkan.
+
+### Ganti Font
+
+1. Edit `index.html` — ganti link Google Fonts
+2. Edit `src/index.css` — ganti `--font-sans`
+
+### Tambah Menu
+
+Login sebagai admin → **Kelola Menu** → klik tombol **"+"** untuk tambah produk baru.
+
+### Tambah Cabang
+
+Login sebagai admin → **Kelola Cabang** → tambah cabang baru.
+
+---
+
+## Tech Stack
+
+| Layer | Teknologi |
+|-------|-----------|
+| Frontend | React 19, Vite 8, Tailwind CSS 4 |
+| Backend | Supabase (PostgreSQL, Auth, Realtime, Storage, Edge Functions) |
+| Icons | Lucide React |
+| Font | Plus Jakarta Sans |
+| Hosting | Netlify (atau platform lain yang support SPA) |
+| PWA | vite-plugin-pwa |
+
+---
+
+## Lisensi
+
+MIT License — bebas digunakan untuk keperluan komersial maupun personal.
+
+---
+
+## Bantuan
+
+Jika ada pertanyaan atau kendala saat setup, silakan hubungi developer.
