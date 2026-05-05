@@ -86,7 +86,7 @@ serve(async (req) => {
     const { error: updateError } = await supabase
       .from('orders')
       .update({
-        payment_id: paymentData.order_id,
+        payment_id: paymentData.orderId, // Cashi.id returns orderId (camelCase)
         payment_url: paymentData.qrUrl, // Cashi.id returns base64 image in qrUrl
       })
       .eq('id', order_id);
@@ -100,11 +100,11 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: paymentData.success,
-        payment_id: paymentData.order_id,
+        payment_id: paymentData.orderId, // Return orderId
         payment_url: paymentData.qrUrl, // Base64 QRIS image
         checkout_url: paymentData.checkout_url,
         amount: paymentData.amount,
-        expires_at: paymentData.expires_at,
+        expected_net: paymentData.expected_net,
       }),
       { 
         status: 200, 
