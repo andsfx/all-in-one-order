@@ -251,9 +251,20 @@ export function OrderProvider({ children }) {
       .select('*, order_items(*, products(name, image_url))')
       .eq('id', orderId)
       .eq('session_token', sessionToken) // Filter by session token
-      .single();
+      .maybeSingle(); // Use maybeSingle to avoid 406 when no rows found
 
-    if (error || !data) return null;
+    if (error) {
+      console.error('getOrder error:', error);
+      // If session_token filter fails, try without it (for backwards compatibility)
+      const { data: fallback, error: fallbackError } = await supabase
+        .from('orders')
+        .select('*, order_items(*, products(name, image_url))')
+        .eq('id', orderId)
+        .maybeSingle();
+      if (fallbackError || !fallback) return null;
+      return transformOrder(fallback);
+    }
+    if (!data) return null;
     return transformOrder(data);
   }, [orders]);
 
