@@ -173,6 +173,74 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
+    // Fetch order to validate amount before updating
+    const { data: existingOrder, error: fetchError } = await supabase
+      .from('orders')
+      .select('id, total, status, payment_id')
+      .eq('id', order_id)
+      .eq('payment_id', transaction_id)
+      .single();
+
+    if (fetchError || !existingOrder) {
+      console.error('Order not found:', order_id, fetchError);
+      return new Response('OK', { status: 200 }); // Return 200 to prevent retry
+    }
+
+    // FRAUD PREVENTION: Validate payment amount matches order total
+    // Allow ±100 rupiah tolerance for rounding differences
+    const TOLERANCE = 100;
+    const amountDiff = Math.abs(amount - existingOrder.total);
+    
+    if (amountDiff > TOLERANCE) {
+      console.error('FRAUD ATTEMPT DETECTED: Amount mismatch', {
+        order_id,
+        transaction_id,
+        expected_amount: existingOrder.total,
+        received_amount: amount,
+        difference: amountDiff,
+      });
+
+      // Log fraud attempt to audit trail
+      await supabase.from('audit_logs').insert({
+        table_name: 'orders',
+        record_id: order_id,
+        action: 'FRAUD_ATTEMPT',
+        user_type: 'system',
+        user_email: 'cashi-webhook@system',
+        field_name: 'amount',
+        old_value: existingOrder.total.toString(),
+        new_value: amount.toString(),
+        metadata: {
+          transaction_id,
+          expected_amount: existingOrder.total,
+          received_amount: amount,
+          difference: amountDiff,
+          source: 'cashi-webhook',
+          reason: 'payment_amount_mismatch',
+        },
+      });
+
+      // Return 200 to prevent Cashi.id from retrying invalid payment
+      return new Response(
+        JSON.stringify({ 
+          error: 'Payment amount mismatch',
+          expected: existingOrder.total,
+          received: amount,
+        }),
+        { 
+          status: 200, 
+          headers: { 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    console.log('Amount validation passed:', {
+      order_id,
+      expected: existingOrder.total,
+      received: amount,
+      difference: amountDiff,
+    });
+
     // Update order status to paid
     const { data: order, error: updateError } = await supabase
       .from('orders')

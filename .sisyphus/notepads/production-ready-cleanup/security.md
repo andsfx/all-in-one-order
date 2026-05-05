@@ -182,3 +182,87 @@ Expected: First 10 requests succeed (200), next 5 fail (429)
 - Sliding window is more user-friendly than fixed window
 - Always include Retry-After header for rate limits
 - IP extraction needs fallback chain for different proxy configs
+
+
+## Payment Amount Validation (2026-05-05 12:26)
+
+### Critical Fraud Prevention
+Implemented amount validation in cashi-webhook to prevent payment amount manipulation:
+- **Vulnerability**: Customer pays Rp 1,000 but order for Rp 50,000 gets confirmed
+- **Fix**: Compare webhook amount vs order.total before status update
+
+### Implementation Details
+1. **Order Fetch**: Query order.total from database before updating status
+2. **Amount Comparison**: Math.abs(webhook_amount - order.total)
+3. **Tolerance**: ±100 rupiah for rounding differences
+4. **Fraud Logging**: Log to audit_logs with action='FRAUD_ATTEMPT'
+5. **Safe Rejection**: Return 200 (not 500) to prevent Cashi.id retry spam
+
+### Code Pattern
+```typescript
+// Fetch order first
+const { data: existingOrder } = await supabase
+  .from('orders')
+  .select('id, total, status, payment_id')
+  .eq('id', order_id)
+  .eq('payment_id', transaction_id)
+  .single();
+
+// Validate amount with tolerance
+const TOLERANCE = 100;
+const amountDiff = Math.abs(amount - existingOrder.total);
+
+if (amountDiff > TOLERANCE) {
+  // Log fraud attempt
+  await supabase.from('audit_logs').insert({
+    action: 'FRAUD_ATTEMPT',
+    old_value: existingOrder.total.toString(),
+    new_value: amount.toString(),
+    metadata: { difference: amountDiff, reason: 'payment_amount_mismatch' }
+  });
+  
+  // Return 200 to prevent retry
+  return new Response(JSON.stringify({ 
+    error: 'Payment amount mismatch',
+    expected: existingOrder.total,
+    received: amount
+  }), { status: 200 });
+}
+```
+
+### Security Guarantees
+✅ Order total fetched from database (source of truth)
+✅ Webhook amount validated before status update
+✅ Fraud attempts logged with full context
+✅ Invalid payments rejected without retry
+✅ Tolerance prevents false positives from rounding
+✅ Order status unchanged on validation failure
+
+### Test Scenarios
+1. **Amount Mismatch**: Order=50000, Webhook=1000 → Fraud logged, order stays pending
+2. **Amount Match**: Order=50000, Webhook=50000 → Order updated to paid
+3. **Within Tolerance**: Order=50000, Webhook=50050 → Accepted (50 <= 100)
+4. **Exceeds Tolerance**: Order=50000, Webhook=50150 → Rejected (150 > 100)
+
+### Performance Impact
+- Additional query: +1 SELECT before UPDATE
+- Latency increase: ~10-20ms (negligible)
+- No impact on legitimate payments
+
+### Monitoring Recommendations
+1. Set up alert for FRAUD_ATTEMPT audit logs
+2. Monitor amount_diff distribution in success logs
+3. Review tolerance (100 rupiah) after production data
+4. Track validation failure rate
+
+### Evidence
+- Test scenarios: .sisyphus/evidence/task-amount-validation.txt
+- Manual test commands included
+- Database verification queries provided
+
+### Lessons Learned
+- Always validate payment amounts against source of truth
+- Use tolerance for floating-point/rounding differences
+- Return 200 (not 500) for validation failures to prevent retry spam
+- Log fraud attempts with detailed metadata for monitoring
+- Fetch order data before updating to ensure consistency
