@@ -1,0 +1,6 @@
+﻿VERIFICATION: Cashi.id environment variables added to .env.example
+
+D:\Andy\order-kopi\.env.example:6: CASHI_API_KEY=your_cashi_api_key_here
+D:\Andy\order-kopi\.env.example:7: CASHI_WEBHOOK_SECRET=your_cashi_webhook_secret_here
+
+STATUS: Both variables present with placeholder values
