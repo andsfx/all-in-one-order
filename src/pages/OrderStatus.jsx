@@ -5,7 +5,6 @@ import { getSessionToken } from '../lib/sessionToken';
 import { logOrderCancellation } from '../lib/auditLog';
 import { ArrowLeft, Clock, CheckCircle, ChefHat, Package, Star, Loader2, XCircle, Share2, MessageCircle } from 'lucide-react';
 import { useStore } from '../lib/useStore';
-import { supabase } from '../lib/supabase';
 
 const STEPS = [
   { key: 'pending_payment', label: 'Bayar', icon: CreditCard },
