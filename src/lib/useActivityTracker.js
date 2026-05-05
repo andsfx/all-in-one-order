@@ -58,11 +58,6 @@ export function useActivityTracker(enabled = true) {
     statusCheckIntervalRef.current = setInterval(() => {
       const status = getTokenStatus();
       
-      // If token will auto-refresh, log it for debugging
-      if (status.willAutoRefresh) {
-        console.log('🔄 Token will auto-refresh on next getSessionToken() call');
-      }
-      
       // If token is about to expire and user is inactive, warn
       if (status.isValid && status.timeRemaining < 5 * 60 * 1000 && !status.willAutoRefresh) {
         console.warn('⚠️ Session token will expire soon. User appears inactive.');

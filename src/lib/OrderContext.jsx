@@ -87,10 +87,6 @@ export function OrderProvider({ children }) {
 
   // Place a new order (insert into Supabase)
   async function placeOrder(cartItems, customerInfo) {
-    console.log('=== placeOrder called ===');
-    console.log('customerInfo:', customerInfo);
-    console.log('paymentMethod:', customerInfo.paymentMethod);
-    
     // Get or create session token for this customer
     const sessionToken = getSessionToken();
     
@@ -126,10 +122,7 @@ export function OrderProvider({ children }) {
     let paymentUrl = null;
     let paymentId = null;
     
-    console.log('Checking payment method:', customerInfo.paymentMethod);
-    
     if (customerInfo.paymentMethod === 'qris') {
-      console.log('Payment method is QRIS - calling create-cashi-payment...');
       try {
         const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-cashi-payment', {
           body: {
@@ -143,7 +136,6 @@ export function OrderProvider({ children }) {
           console.error('Failed to create Cashi payment:', paymentError);
           // Continue without payment URL - will show error to user
         } else if (paymentData) {
-          console.log('Cashi payment created:', paymentData);
           paymentUrl = paymentData.payment_url; // Cashi.id returns base64 QRIS image
           paymentId = paymentData.payment_id;
           
@@ -158,8 +150,6 @@ export function OrderProvider({ children }) {
             
           if (updateError) {
             console.error('Failed to update order with payment details:', updateError);
-          } else {
-            console.log('Order updated with payment_url:', paymentUrl?.substring(0, 50) + '...');
           }
         }
       } catch (error) {

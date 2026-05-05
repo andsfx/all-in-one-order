@@ -74,7 +74,6 @@ export function getSessionToken() {
           if (timeSinceActivity < ACTIVITY_THRESHOLD_MS) {
             // User is active, refresh the token expiry
             refreshTokenExpiry();
-            console.log('🔄 Token auto-refreshed due to user activity');
           }
         }
         

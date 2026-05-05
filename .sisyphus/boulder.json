@@ -1,0 +1,59 @@
+{
+  "active_plan": "D:\\Andy\\order-kopi\\.sisyphus\\plans\\production-ready-cleanup.md",
+  "started_at": "2026-05-05T04:45:44.766Z",
+  "session_ids": [
+    "ses_217ea6c87ffewioRI5WYmjFyc2"
+  ],
+  "session_origins": {
+    "ses_217ea6c87ffewioRI5WYmjFyc2": "direct"
+  },
+  "plan_name": "production-ready-cleanup",
+  "agent": "atlas",
+  "task_sessions": {
+    "todo:1": {
+      "task_key": "todo:1",
+      "task_label": "1",
+      "task_title": "Implement Webhook Signature Verification",
+      "session_id": "ses_2098a7c05ffeGSgh3XqSNlObbs",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-05-05T04:52:21.078Z"
+    },
+    "todo:2": {
+      "task_key": "todo:2",
+      "task_label": "2",
+      "task_title": "Remove Hardcoded Secrets from Codebase",
+      "session_id": "ses_20982cea5ffezy356BUFfuGlsL",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-05-05T04:56:07.814Z"
+    },
+    "todo:3": {
+      "task_key": "todo:3",
+      "task_label": "3",
+      "task_title": "Fix order_items RLS Policy to Prevent Data Leakage",
+      "session_id": "ses_209804cecffeTFbcVVaaYO0TIM",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-05-05T05:01:12.029Z"
+    },
+    "todo:4": {
+      "task_key": "todo:4",
+      "task_label": "4",
+      "task_title": "Add Cashi.id Environment Variables to .env.example",
+      "session_id": "ses_2097bf2fdffewHC703QG3ZgT5u",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-05-05T05:03:26.130Z"
+    },
+    "final-wave:f1": {
+      "task_key": "final-wave:f1",
+      "task_label": "F1",
+      "task_title": "**Security Audit Verification** — `oracle`",
+      "session_id": "ses_20979927effeiFjo4jCGz4iMuS",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-05-05T05:07:50.820Z"
+    }
+  }
+}

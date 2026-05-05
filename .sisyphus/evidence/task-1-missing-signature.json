@@ -1,0 +1,9 @@
+﻿HTTP/1.1 200 OK
+Date: Tue, 05 May 2026 04:50:12 GMT
+Content-Type: text/plain;charset=UTF-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+CF-Ray: 9f6d1f7aee47885b-SIN
+CF-Cache-Status: DYNAMIC
+set-cookie: __cf_bm=kc8dgOOSjprSKnN5mO6OlwzM.mnLFJ5GvmxbyO1EPuU-1777956612.30602-1.0.1.1-4p6.NUBa1lvU1qvj0buShFvYEccXYEe_vZvFjIlUIx8OvzJObLJfXU_JnwH7ixmeOh4sMwvLXtOKR1R2r8BPs6YiBWiFFvzm6s1e9eti_l78EaEZH3yLu4QL9b6Xv7V7; HttpOnly; Secure; Path=/; Domain=supabase.co; Expires=Tue, 05 May 2026 05:20:12... (982 bytes total)
+[full output: ~/AppData\Local\rtk\tee\1777956612_curl.log]
