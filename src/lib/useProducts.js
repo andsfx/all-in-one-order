@@ -24,7 +24,7 @@ export function useProducts() {
         // Fetch products (only available)
         const { data: prodData, error: prodError } = await supabase
           .from('products')
-          .select('id, name, price, price_small, price_large, description, image_url, category_id, categories(name)')
+          .select('id, name, price, price_small, price_large, description, image_url, category_id, discount_percent, categories(name)')
           .eq('is_available', true)
           .order('id');
 
@@ -40,6 +40,7 @@ export function useProducts() {
           description: p.description,
           image_url: p.image_url,
           category: p.categories?.name || 'Lainnya',
+          discount_percent: p.discount_percent,
         }));
 
         setCategories(['Semua', ...catData.map((c) => c.name)]);
