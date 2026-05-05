@@ -17,7 +17,7 @@ serve(async (req) => {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, HEAD',
-        'Access-Control-Allow-Headers': 'Content-Type, X-Signature',
+        'Access-Control-Allow-Headers': 'Content-Type, X-Signature, x-session-token, authorization, x-client-info, apikey',
       },
     });
   }
