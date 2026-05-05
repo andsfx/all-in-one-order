@@ -98,3 +98,28 @@ The code is production-ready but requires manual deployment:
 - Add secret scanning to CI/CD pipeline to prevent future hardcoded secrets
 - Consider using placeholder values in documentation (e.g., `sk_YOUR_SECRET_HERE`)
 
+
+## Task 3: Fixed order_items RLS Policy
+
+### Issue
+- order_items table had insecure RLS policy: "Anyone can view order items"
+- Allowed cross-session data leakage (User A could see User B's order items)
+
+### Fix Applied
+- Replaced policy with session token check via parent order
+- Policy logic: EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND orders.session_token = current_setting('request.headers')::json->>'x-session-token')
+- Preserved admin access: OR auth.role() = 'authenticated'
+
+### Location
+- File: supabase/setup.sql:123-134
+- Policy name: "Customers can view their own order items"
+
+### Pattern
+- Use EXISTS subquery to check parent table's session token
+- Always include admin bypass: OR auth.role() = 'authenticated'
+- Reference: supabase/migrations/001_add_session_token.sql:27-32
+
+### Testing
+- Manual test guide: .sisyphus/evidence/task-3-rls-manual-test.md
+- Automated test blocked by RLS on orders table (requires proper header setup)
+

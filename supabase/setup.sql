@@ -120,8 +120,18 @@ alter table order_items enable row level security;
 create policy "Anyone can create order items"
   on order_items for insert with check (true);
 
-create policy "Anyone can view order items"
-  on order_items for select using (true);
+-- Policy: Customers can only view order items for their own orders (by session token)
+-- Admin (authenticated users) can view all order items
+create policy "Customers can view their own order items"
+  on order_items for select
+  using (
+    exists (
+      select 1 from orders
+      where orders.id = order_items.order_id
+      and orders.session_token = current_setting('request.headers', true)::json->>'x-session-token'
+    )
+    or auth.role() = 'authenticated'
+  );
 
 create policy "Authenticated users can delete order items"
   on order_items for delete using (auth.role() = 'authenticated');

@@ -1,0 +1,38 @@
+{
+  "task": "Fix order_items RLS policy",
+  "timestamp": "2026-05-05T12:00:00Z",
+  "status": "completed",
+  "changes": {
+    "file": "supabase/setup.sql",
+    "lines": "123-134",
+    "policy_name": "Customers can view their own order items",
+    "old_policy": "Anyone can view order items (using: true)",
+    "new_policy": "Session token check via parent order + admin bypass"
+  },
+  "security_improvement": {
+    "before": "Any user could view all order items (cross-session data leakage)",
+    "after": "Users can only view order items for orders they own (via session token) OR if authenticated admin",
+    "vulnerability_fixed": "Cross-session data leakage in order_items table"
+  },
+  "policy_logic": {
+    "customer_access": "EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND orders.session_token = current_setting('request.headers', true)::json->>'x-session-token')",
+    "admin_access": "auth.role() = 'authenticated'",
+    "combined": "customer_access OR admin_access"
+  },
+  "verification": {
+    "sql_syntax": "valid",
+    "pattern_match": "matches secure pattern from supabase/migrations/001_add_session_token.sql:27-32",
+    "admin_bypass": "preserved",
+    "manual_test_guide": ".sisyphus/evidence/task-3-rls-manual-test.md"
+  },
+  "testing_notes": {
+    "automated_test": "blocked by RLS on orders table (requires proper header setup in Supabase client)",
+    "manual_test": "curl commands provided in task-3-rls-manual-test.md",
+    "expected_behavior": {
+      "cross_session_access": "User A with session-token-A cannot see User B's order items",
+      "own_session_access": "User B with session-token-B can see their own order items",
+      "admin_access": "Authenticated users can see all order items"
+    }
+  },
+  "notepad_updated": ".sisyphus/notepads/production-ready-cleanup/security.md"
+}
