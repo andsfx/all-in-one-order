@@ -136,17 +136,24 @@ export function OrderProvider({ children }) {
           console.error('Failed to create Cashi payment:', paymentError);
           // Continue without payment URL - will show error to user
         } else if (paymentData) {
-          paymentUrl = paymentData.qr_url;
+          console.log('Cashi payment created:', paymentData);
+          paymentUrl = paymentData.payment_url; // Cashi.id returns base64 QRIS image
           paymentId = paymentData.payment_id;
           
           // Update order with payment details
-          await supabase
+          const { error: updateError } = await supabase
             .from('orders')
             .update({
               payment_id: paymentId,
               payment_url: paymentUrl,
             })
             .eq('id', orderId);
+            
+          if (updateError) {
+            console.error('Failed to update order with payment details:', updateError);
+          } else {
+            console.log('Order updated with payment_url:', paymentUrl?.substring(0, 50) + '...');
+          }
         }
       } catch (error) {
         console.error('Error creating Cashi payment:', error);
