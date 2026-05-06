@@ -15,11 +15,21 @@ function loadCart() {
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState(loadCart);
+  const [appliedVoucher, setAppliedVoucher] = useState(null);
+  const [voucherDiscount, setVoucherDiscount] = useState(0);
 
   // Persist cart to localStorage
   useEffect(() => {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
   }, [items]);
+
+  // Clear voucher when cart changes
+  useEffect(() => {
+    if (appliedVoucher && items.length === 0) {
+      setAppliedVoucher(null);
+      setVoucherDiscount(0);
+    }
+  }, [items, appliedVoucher]);
 
   function getPrice(product, size) {
     let basePrice;
@@ -62,13 +72,47 @@ export function CartProvider({ children }) {
 
   function clearCart() {
     setItems([]);
+    setAppliedVoucher(null);
+    setVoucherDiscount(0);
+  }
+
+  function applyVoucher(voucher, discount) {
+    setAppliedVoucher(voucher);
+    setVoucherDiscount(discount);
+  }
+
+  function removeVoucher() {
+    setAppliedVoucher(null);
+    setVoucherDiscount(0);
   }
 
   const totalItems = useMemo(() => items.reduce((sum, i) => sum + i.qty, 0), [items]);
-  const totalPrice = useMemo(() => items.reduce((sum, i) => sum + (i.price ?? i.product.price) * i.qty, 0), [items]);
+  
+  const subtotal = useMemo(() => 
+    items.reduce((sum, i) => sum + (i.price ?? i.product.price) * i.qty, 0), 
+    [items]
+  );
+  
+  const totalPrice = useMemo(() => 
+    Math.max(0, subtotal - voucherDiscount), 
+    [subtotal, voucherDiscount]
+  );
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, updateQty, clearCart, totalItems, totalPrice }}>
+    <CartContext.Provider value={{ 
+      items, 
+      addItem, 
+      removeItem, 
+      updateQty, 
+      clearCart, 
+      totalItems, 
+      subtotal,
+      totalPrice,
+      appliedVoucher,
+      voucherDiscount,
+      applyVoucher,
+      removeVoucher,
+    }}>
       {children}
     </CartContext.Provider>
   );
