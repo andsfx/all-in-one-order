@@ -4,7 +4,7 @@ import { useCart } from '../lib/CartContext';
 import { useEscapeKey, useBodyScrollLock } from '../lib/useEscapeKey';
 
 export default function CartDrawer({ open, onClose }) {
-  const { items, removeItem, updateQty, clearCart, totalPrice } = useCart();
+  const { items, removeItem, updateQty, clearCart, subtotal, totalPrice, appliedVoucher, voucherDiscount } = useCart();
   const navigate = useNavigate();
 
   useEscapeKey(onClose, open);
@@ -96,11 +96,29 @@ export default function CartDrawer({ open, onClose }) {
 
             {/* Footer */}
             <div className="mt-4 pt-4 border-t border-border-light">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm text-text-secondary">Total</span>
-                <span className="text-lg font-bold text-text-primary">
-                  Rp {totalPrice.toLocaleString('id-ID')}
-                </span>
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-text-secondary">Subtotal</span>
+                  <span className="text-sm font-semibold text-text-primary">
+                    Rp {subtotal.toLocaleString('id-ID')}
+                  </span>
+                </div>
+                
+                {appliedVoucher && voucherDiscount > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-green-600">Diskon ({appliedVoucher.code})</span>
+                    <span className="text-sm font-semibold text-green-600">
+                      -Rp {voucherDiscount.toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                )}
+                
+                <div className="flex items-center justify-between pt-2 border-t border-border-light">
+                  <span className="text-sm font-semibold text-text-secondary">Total</span>
+                  <span className="text-lg font-bold text-primary">
+                    Rp {totalPrice.toLocaleString('id-ID')}
+                  </span>
+                </div>
               </div>
               <button
                 onClick={handleCheckout}
