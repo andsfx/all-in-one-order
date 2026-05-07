@@ -1,9 +1,20 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Palette, QrCode, Lock, Trash2, Info, Upload, Eye, EyeOff, Loader2, HelpCircle, Phone } from 'lucide-react';
+import { ArrowLeft, Palette, QrCode, Lock, Trash2, Info, Upload, Eye, EyeOff, Loader2, HelpCircle, Phone, Check } from 'lucide-react';
 import { useStore } from '../lib/useStore';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
+
+const PRESET_COLORS = [
+  { name: 'Hijau Tua', hex: '#006041' },
+  { name: 'Coklat Kopi', hex: '#6F4E37' },
+  { name: 'Navy', hex: '#1E3A5F' },
+  { name: 'Merah Maroon', hex: '#800020' },
+  { name: 'Ungu', hex: '#5B2C6F' },
+  { name: 'Biru', hex: '#1A5276' },
+  { name: 'Hitam', hex: '#1C1C1C' },
+  { name: 'Terralogos', hex: '#CC5500' },
+];
 
 export default function AdminSettings() {
   const { settings, updateSetting } = useStore();
@@ -11,6 +22,7 @@ export default function AdminSettings() {
 
   // Branding state
   const [storeName, setStoreName] = useState(settings.store_name || 'Order Kopi');
+  const [primaryColor, setPrimaryColor] = useState(settings.primary_color || '#006041');
   const [savingBrand, setSavingBrand] = useState(false);
   const [uploadingQris, setUploadingQris] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -31,8 +43,9 @@ export default function AdminSettings() {
   async function handleSaveBranding() {
     setSavingBrand(true);
     await updateSetting('store_name', storeName);
+    await updateSetting('primary_color', primaryColor);
     setSavingBrand(false);
-    addToast('Nama toko disimpan');
+    addToast('Branding disimpan');
   }
 
   async function handleUploadFile(file, key, setUploading) {
@@ -186,15 +199,89 @@ export default function AdminSettings() {
                 className="flex-1 px-4 py-2.5 rounded-xl bg-surface-secondary text-sm text-text-primary outline-none focus:ring-2 focus:ring-primary/20 border border-transparent focus:border-primary/30"
                 placeholder="Nama toko kamu"
               />
-              <button
-                onClick={handleSaveBranding}
-                disabled={savingBrand}
-                className="bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-semibold active:scale-95 transition-transform disabled:opacity-60"
-              >
-                {savingBrand ? '...' : 'Simpan'}
-              </button>
             </div>
           </div>
+
+          {/* Primary Color */}
+          <div className="mb-4">
+            <label className="text-xs font-medium text-text-muted block mb-1.5">Warna Utama</label>
+            <p className="text-xs text-text-muted mb-3">Pilih warna yang sesuai branding toko Anda</p>
+            
+            {/* Preset Colors */}
+            <div className="grid grid-cols-4 gap-2 mb-3">
+              {PRESET_COLORS.map((color) => (
+                <button
+                  key={color.hex}
+                  onClick={() => setPrimaryColor(color.hex)}
+                  className={`relative flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all active:scale-95 ${
+                    primaryColor === color.hex
+                      ? 'border-primary bg-surface-accent'
+                      : 'border-transparent bg-surface-secondary hover:border-border'
+                  }`}
+                >
+                  <div
+                    className="w-8 h-8 rounded-full border border-black/10 shadow-sm"
+                    style={{ backgroundColor: color.hex }}
+                  />
+                  <span className="text-[10px] text-text-muted leading-tight">{color.name}</span>
+                  {primaryColor === color.hex && (
+                    <Check size={12} className="absolute top-1 right-1 text-primary" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Custom Color Input */}
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <input
+                  type="color"
+                  value={primaryColor}
+                  onChange={(e) => setPrimaryColor(e.target.value)}
+                  className="w-10 h-10 rounded-xl cursor-pointer border-0 p-0.5 bg-surface-secondary"
+                />
+              </div>
+              <input
+                type="text"
+                value={primaryColor}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (/^#[0-9a-fA-F]{0,6}$/.test(val)) setPrimaryColor(val);
+                }}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-surface-secondary text-sm text-text-primary font-mono outline-none focus:ring-2 focus:ring-primary/20 border border-transparent focus:border-primary/30"
+                placeholder="#006041"
+                maxLength={7}
+              />
+            </div>
+
+            {/* Preview */}
+            <div className="mt-3 p-3 rounded-xl border border-border-light">
+              <p className="text-xs text-text-muted mb-2">Preview</p>
+              <div className="flex items-center gap-3">
+                <button
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-white"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  Tombol Utama
+                </button>
+                <span className="text-sm font-bold" style={{ color: primaryColor }}>
+                  Rp 25.000
+                </span>
+                <div className="px-3 py-1 rounded-full text-xs font-semibold text-white" style={{ backgroundColor: primaryColor }}>
+                  Badge
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Save Branding Button */}
+          <button
+            onClick={handleSaveBranding}
+            disabled={savingBrand}
+            className="w-full bg-primary text-white py-2.5 rounded-xl text-sm font-semibold active:scale-[0.98] transition-transform disabled:opacity-60 mb-4"
+          >
+            {savingBrand ? 'Menyimpan...' : 'Simpan Branding'}
+          </button>
 
           {/* Store Logo */}
           <div className="mb-4">
