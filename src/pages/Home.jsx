@@ -25,7 +25,7 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState(null); // null = use first category when loaded
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [options, setOptions] = useState({ size: 'Regular', temp: 'Iced', sugar: 'Normal' });
+  const [options, setOptions] = useState({ size: 'Regular Ice', sweetness: 'Normal Sweet', iceCube: 'Normal Ice' });
   const [showCart, setShowCart] = useState(false);
   const [promos, setPromos] = useState([]);
   const [branches, setBranches] = useState([]);
@@ -72,8 +72,7 @@ export default function Home() {
   function getSelectedPrice() {
     if (!selectedProduct) return 0;
     let basePrice;
-    if (options.size === 'Small' && selectedProduct.price_small != null) basePrice = selectedProduct.price_small;
-    else if (options.size === 'Large' && selectedProduct.price_large != null) basePrice = selectedProduct.price_large;
+    if (options.size === 'Large Ice' && selectedProduct.price_large != null) basePrice = selectedProduct.price_large;
     else basePrice = selectedProduct.price;
 
     if (selectedProduct.discount_percent && selectedProduct.discount_percent > 0) {
@@ -84,18 +83,15 @@ export default function Home() {
 
   function getOriginalPrice() {
     if (!selectedProduct) return 0;
-    if (options.size === 'Small' && selectedProduct.price_small != null) return selectedProduct.price_small;
-    if (options.size === 'Large' && selectedProduct.price_large != null) return selectedProduct.price_large;
+    if (options.size === 'Large Ice' && selectedProduct.price_large != null) return selectedProduct.price_large;
     return selectedProduct.price;
   }
 
   // Get available sizes for a product
   function getAvailableSizes(product) {
     if (!product) return [];
-    const sizes = [];
-    if (product.price_small != null) sizes.push('Small');
-    sizes.push('Regular');
-    if (product.price_large != null) sizes.push('Large');
+    const sizes = ['Regular Ice'];
+    if (product.price_large != null) sizes.push('Large Ice');
     return sizes;
   }
 
@@ -104,7 +100,7 @@ export default function Home() {
     addItem(selectedProduct, options);
     addToast('Ditambahkan ke keranjang');
     setSelectedProduct(null);
-    setOptions({ size: 'Regular', temp: 'Iced', sugar: 'Normal' });
+    setOptions({ size: 'Regular Ice', sweetness: 'Normal Sweet', iceCube: 'Normal Ice' });
   }
 
   function scrollPromo(dir) {
@@ -330,10 +326,10 @@ export default function Home() {
               </div>
             )}
 
-            {/* Opsi Size */}
+            {/* Opsi Ukuran Cup */}
             {selectedProduct.category !== 'Pastry' && selectedProduct.category !== 'Fore Deli' && (
               <div className="mt-4">
-                <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2.5">Ukuran</p>
+                <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2.5">Ukuran Cup</p>
                 <div className="flex gap-2">
                   {getAvailableSizes(selectedProduct).map((s) => (
                     <button
@@ -345,51 +341,51 @@ export default function Home() {
                           : 'bg-surface-secondary text-text-secondary active:scale-95'
                       }`}
                     >
-                      {s}
+                      {s}{s === 'Large Ice' && selectedProduct.price_large ? ` +${(selectedProduct.price_large - selectedProduct.price).toLocaleString('id-ID')}` : ''}
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Opsi Suhu */}
+            {/* Opsi Sweetness */}
             {selectedProduct.category !== 'Pastry' && (
               <div className="mt-3">
-                <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2.5">Suhu</p>
+                <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2.5">Sweetness</p>
                 <div className="flex gap-2">
-                  {['Hot', 'Iced'].map((t) => (
+                  {['Normal Sweet', 'Less Sweet'].map((sw) => (
                     <button
-                      key={t}
-                      onClick={() => setOptions((o) => ({ ...o, temp: t }))}
+                      key={sw}
+                      onClick={() => setOptions((o) => ({ ...o, sweetness: sw }))}
                       className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                        options.temp === t
+                        options.sweetness === sw
                           ? 'bg-primary text-white shadow-[0_2px_8px_rgba(0,96,65,0.25)]'
                           : 'bg-surface-secondary text-text-secondary active:scale-95'
                       }`}
                     >
-                      {t}
+                      {sw}
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Opsi Gula */}
+            {/* Opsi Ice Cube */}
             {selectedProduct.category !== 'Pastry' && (
               <div className="mt-3">
-                <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2.5">Gula</p>
+                <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2.5">Ice Cube</p>
                 <div className="flex gap-2">
-                  {['Less', 'Normal', 'Extra'].map((g) => (
+                  {['Normal Ice', 'Less Ice', 'More Ice'].map((ic) => (
                     <button
-                      key={g}
-                      onClick={() => setOptions((o) => ({ ...o, sugar: g }))}
+                      key={ic}
+                      onClick={() => setOptions((o) => ({ ...o, iceCube: ic }))}
                       className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                        options.sugar === g
+                        options.iceCube === ic
                           ? 'bg-primary text-white shadow-[0_2px_8px_rgba(0,96,65,0.25)]'
                           : 'bg-surface-secondary text-text-secondary active:scale-95'
                       }`}
                     >
-                      {g}
+                      {ic}
                     </button>
                   ))}
                 </div>

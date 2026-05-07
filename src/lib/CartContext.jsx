@@ -33,8 +33,7 @@ export function CartProvider({ children }) {
 
   function getPrice(product, size) {
     let basePrice;
-    if (size === 'Small' && product.price_small != null) basePrice = product.price_small;
-    else if (size === 'Large' && product.price_large != null) basePrice = product.price_large;
+    if (size === 'Large Ice' && product.price_large != null) basePrice = product.price_large;
     else basePrice = product.price;
 
     // Apply discount if exists
@@ -46,7 +45,7 @@ export function CartProvider({ children }) {
 
   function addItem(product, options) {
     setItems((prev) => {
-      const key = `${product.id}-${options.size}-${options.temp}-${options.sugar}`;
+      const key = `${product.id}-${options.size}-${options.sweetness}-${options.iceCube}`;
       const existing = prev.find((i) => i.key === key);
       if (existing) {
         if (existing.qty >= MAX_QTY) return prev;

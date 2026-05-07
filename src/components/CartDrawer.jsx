@@ -58,7 +58,7 @@ export default function CartDrawer({ open, onClose }) {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm text-text-primary truncate">{item.product.name}</p>
                     <p className="text-xs text-text-muted mt-0.5">
-                      {item.options.size} · {item.options.temp} · {item.options.sugar}
+                      {item.options.size} · {item.options.sweetness} · {item.options.iceCube}
                     </p>
                     <p className="text-primary font-bold text-sm mt-1">
                       Rp {((item.price ?? item.product.price) * item.qty).toLocaleString('id-ID')}

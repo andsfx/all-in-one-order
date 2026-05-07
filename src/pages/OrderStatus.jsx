@@ -322,7 +322,7 @@ export default function OrderStatus() {
                     {item.product.name} <span className="text-text-muted">&times;{item.qty}</span>
                   </p>
                   <p className="text-xs text-text-muted">
-                    {item.options.size} &middot; {item.options.temp} &middot; {item.options.sugar}
+                    {item.options.size} &middot; {item.options.sweetness} &middot; {item.options.iceCube}
                   </p>
                 </div>
                 <p className="font-semibold text-text-primary">

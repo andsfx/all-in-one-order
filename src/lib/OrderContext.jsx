@@ -22,7 +22,7 @@ function transformOrder(order) {
     paymentMethod: order.payment_method || 'qris',
     paymentProofPath: order.payment_proof_path,
     items: (order.order_items || []).map((item) => ({
-      key: `${item.product_id}-${item.size}-${item.temp}-${item.sugar}`,
+      key: `${item.product_id}-${item.size}-${item.sweetness}-${item.ice_cube}`,
       product: {
         id: item.product_id,
         name: item.product_name,
@@ -32,8 +32,8 @@ function transformOrder(order) {
       price: item.price_at_order,
       options: {
         size: item.size,
-        temp: item.temp,
-        sugar: item.sugar,
+        sweetness: item.sweetness,
+        iceCube: item.ice_cube,
       },
       qty: item.qty,
     })),
@@ -107,8 +107,8 @@ export function OrderProvider({ children }) {
       product_name: item.product.name,
       qty: item.qty,
       size: item.options.size,
-      temp: item.options.temp,
-      sugar: item.options.sugar,
+      sweetness: item.options.sweetness,
+      ice_cube: item.options.iceCube,
       price_at_order: item.price ?? item.product.price,
     }));
 

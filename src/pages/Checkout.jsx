@@ -149,7 +149,7 @@ export default function Checkout() {
                     {item.product.name} <span className="text-text-muted">×{item.qty}</span>
                   </p>
                   <p className="text-xs text-text-muted">
-                    {item.options.size} · {item.options.temp} · {item.options.sugar}
+                    {item.options.size} · {item.options.sweetness} · {item.options.iceCube}
                   </p>
                 </div>
                 <p className="text-sm font-semibold text-text-primary ml-3">
