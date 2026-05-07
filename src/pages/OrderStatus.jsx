@@ -333,9 +333,16 @@ export default function OrderStatus() {
           </div>
           <div className="mt-3 pt-3 border-t border-border-light flex items-center justify-between">
             <span className="font-semibold text-text-primary">Total</span>
-            <span className="text-lg font-bold text-primary">
-              Rp {order.total.toLocaleString('id-ID')}
-            </span>
+            <div className="text-right">
+              <span className="text-lg font-bold text-primary">
+                Rp {(order.amountToPay || order.total).toLocaleString('id-ID')}
+              </span>
+              {order.uniqueCode != null && order.amountToPay > order.total && (
+                <p className="text-xs text-text-muted">
+                  Rp {order.total.toLocaleString('id-ID')} + kode unik {order.uniqueCode}
+                </p>
+              )}
+            </div>
           </div>
         </section>
 

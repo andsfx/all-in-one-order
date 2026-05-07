@@ -351,7 +351,9 @@ export default function Admin() {
                               const waNum = settings.admin_whatsapp;
                               if (waNum) {
                                 const items = order.items.map(i => `• ${i.product.name} x${i.qty}`).join('\n');
-                                const msg = `*Pesanan Baru Dikonfirmasi!*\n\nOrder: ${order.id}\nCustomer: ${order.customer.name}\n\n${items}\n\nTotal: Rp ${order.total.toLocaleString('id-ID')}`;
+                                const payAmount = order.amountToPay ?? order.total;
+                                const uniquePart = order.uniqueCode != null && order.amountToPay > order.total ? ` (termasuk kode unik ${order.uniqueCode})` : '';
+                                const msg = `*Pesanan Baru Dikonfirmasi!*\n\nOrder: ${order.id}\nCustomer: ${order.customer.name}\n\n${items}\n\nBayar: Rp ${payAmount.toLocaleString('id-ID')}${uniquePart}`;
                                 window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`, '_blank');
                               }
                             } catch {
