@@ -26,10 +26,10 @@
 | Monitor pesanan real-time dengan filter status | CRUD produk, kategori, dan upload foto | Analisis penjualan harian dengan grafik |
 
 ### Payment Flow
-| QRIS Static + Unique Code | Upload Payment Proof | Auto-Verification |
+| QRIS Static + Unique Code | Upload Payment Proof | Payment Confirmed |
 |---------------------------|---------------------|-------------------|
-| ![QRIS](screenshots/qris-payment.png) | ![Upload](screenshots/payment-proof.png) | ![Verified](screenshots/payment-verified.png) |
-| Scan QRIS & pay exact amount (Rp 50,123) | Upload screenshot as proof | Auto-approve if amount matches |
+| ![QRIS](screenshots/qris-payment.png) | ![Upload](screenshots/payment-confirmed.png) | ![Verified](screenshots/payment-confirmed.png) |
+| Scan QRIS & pay exact amount (Rp 50,123) | Upload screenshot as proof | Order confirmed after verification |
 
 ---
 
