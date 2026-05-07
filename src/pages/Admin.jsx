@@ -311,9 +311,16 @@ export default function Admin() {
 
                   {/* Total + Action */}
                   <div className="flex items-center justify-between pt-3 border-t border-border-light">
-                    <span className="font-bold text-primary">
-                      Rp {order.total.toLocaleString('id-ID')}
-                    </span>
+                    <div>
+                      <span className="font-bold text-primary">
+                        Rp {(order.amountToPay ?? order.total).toLocaleString('id-ID')}
+                      </span>
+                      {order.uniqueCode != null && order.amountToPay > order.total && (
+                        <p className="text-xs text-text-muted mt-0.5">
+                          Rp {order.total.toLocaleString('id-ID')} + kode unik {order.uniqueCode}
+                        </p>
+                      )}
+                    </div>
                     <div className="flex gap-2">
                       {order.status !== 'done' && order.status !== 'cancelled' && (
                         <button
