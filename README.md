@@ -78,8 +78,9 @@ npm run dev
 
 | File | Isi |
 |------|-----|
+| [docs/CLIENT_SETUP.md](docs/CLIENT_SETUP.md) | 🆕 Panduan setup lengkap untuk client baru |
 | [docs/FEATURES.md](docs/FEATURES.md) | Fitur lengkap, use cases, perbandingan kompetitor |
-| [docs/SETUP.md](docs/SETUP.md) | Panduan setup (database, admin user, env vars) |
+| [docs/SETUP.md](docs/SETUP.md) | Panduan setup developer (database, admin user, env vars) |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deploy ke Netlify, edge functions, environment variables |
 | [docs/SECURITY.md](docs/SECURITY.md) | Keamanan, privacy, error monitoring |
 | [docs/PAYMENT.md](docs/PAYMENT.md) | QRIS payment system, unique code, auto-verification |
