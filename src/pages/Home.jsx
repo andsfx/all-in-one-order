@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
-import { Search, ChevronLeft, ChevronRight, Loader2, X, AlertTriangle } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Loader2, AlertTriangle } from 'lucide-react';
 import { useProducts } from '../lib/useProducts';
 import { useCart } from '../lib/CartContext';
 import { useStoreStatus } from '../lib/useStoreStatus';
@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase';
 import ProductCard from '../components/ProductCard';
 import FloatingCart from '../components/FloatingCart';
 import CartDrawer from '../components/CartDrawer';
+import ProductOptionsModal from '../components/ProductOptionsModal';
 import { useEscapeKey, useBodyScrollLock } from '../lib/useEscapeKey';
 
 const promoThemes = {
@@ -25,7 +26,8 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState(null); // null = use first category when loaded
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [options, setOptions] = useState({ size: 'Regular Ice', sweetness: 'Normal Sweet', iceCube: 'Normal Ice' });
+  const [productVariants, setProductVariants] = useState([]);
+  const [productOptionTemplates, setProductOptionTemplates] = useState([]);
   const [showCart, setShowCart] = useState(false);
   const [promos, setPromos] = useState([]);
   const [branches, setBranches] = useState([]);
@@ -54,6 +56,42 @@ export default function Home() {
     });
   }, []);
 
+  useEffect(() => {
+    async function fetchProductOptions() {
+      if (!selectedProduct) {
+        setProductVariants([]);
+        setProductOptionTemplates([]);
+        return;
+      }
+
+      try {
+        const [{ data: variants, error: variantsError }, { data: templates, error: templatesError }] = await Promise.all([
+          supabase
+            .from('product_variants')
+            .select('id, product_id, sku, name, price_override, stock, image_url, attributes, is_available')
+            .eq('product_id', selectedProduct.id)
+            .order('id'),
+          supabase
+            .from('product_option_templates')
+            .select('sort_order, option_templates(id, name, type, choices)')
+            .eq('product_id', selectedProduct.id)
+            .order('sort_order'),
+        ]);
+
+        if (variantsError) throw variantsError;
+        if (templatesError) throw templatesError;
+
+        setProductVariants(variants || []);
+        setProductOptionTemplates((templates || []).map((row) => row.option_templates).filter(Boolean));
+      } catch (err) {
+        console.error('Error fetching product options:', err);
+        addToast('Gagal memuat opsi produk');
+      }
+    }
+
+    fetchProductOptions();
+  }, [selectedProduct, addToast]);
+
   useEscapeKey(() => setSelectedProduct(null), !!selectedProduct);
   useBodyScrollLock(!!selectedProduct || showCart);
 
@@ -69,38 +107,11 @@ export default function Home() {
     });
   }, [products, effectiveCategory, search]);
 
-  function getSelectedPrice() {
-    if (!selectedProduct) return 0;
-    let basePrice;
-    if (options.size === 'Large Ice' && selectedProduct.price_large != null) basePrice = selectedProduct.price_large;
-    else basePrice = selectedProduct.price;
-
-    if (selectedProduct.discount_percent && selectedProduct.discount_percent > 0) {
-      return Math.round(basePrice * (1 - selectedProduct.discount_percent / 100));
-    }
-    return basePrice;
-  }
-
-  function getOriginalPrice() {
-    if (!selectedProduct) return 0;
-    if (options.size === 'Large Ice' && selectedProduct.price_large != null) return selectedProduct.price_large;
-    return selectedProduct.price;
-  }
-
-  // Get available sizes for a product
-  function getAvailableSizes(product) {
-    if (!product) return [];
-    const sizes = ['Regular Ice'];
-    if (product.price_large != null) sizes.push('Large Ice');
-    return sizes;
-  }
-
-  function handleAddToCart() {
-    if (!selectedProduct) return;
-    addItem(selectedProduct, options);
+  function handleAddToCart(product, variant, selectedOptions) {
+    const templatesMap = {};
+    productOptionTemplates.forEach((t) => { templatesMap[t.name] = t; });
+    addItem(product, variant, selectedOptions, templatesMap, settings);
     addToast('Ditambahkan ke keranjang');
-    setSelectedProduct(null);
-    setOptions({ size: 'Regular Ice', sweetness: 'Normal Sweet', iceCube: 'Normal Ice' });
   }
 
   function scrollPromo(dir) {
@@ -276,131 +287,17 @@ export default function Home() {
       {/* Cart Drawer */}
       <CartDrawer open={showCart} onClose={() => setShowCart(false)} />
 
-      {/* Modal Opsi Produk */}
+      {/* Product Options Modal */}
       {selectedProduct && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 animate-fade-in"
-          onClick={() => setSelectedProduct(null)}
-        >
-           <div
-            className="bg-white w-full max-w-lg rounded-t-[28px] p-5 animate-slide-up"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-center pt-3 pb-1"><div className="w-12 h-1.5 rounded-full bg-border" /></div>
-            <div className="flex justify-end mb-2">
-              <button onClick={() => setSelectedProduct(null)} className="p-1.5 rounded-xl bg-surface-secondary text-text-secondary" aria-label="Tutup">
-                <X size={18} />
-              </button>
-            </div>
-            <div className="flex gap-4">
-              <img
-                src={selectedProduct.image_url}
-                alt={selectedProduct.name}
-                className="w-24 h-24 rounded-2xl object-cover"
-              />
-              <div>
-                <h2 className="font-bold text-lg text-text-primary">{selectedProduct.name}</h2>
-                <p className="text-sm text-text-muted mt-0.5">{selectedProduct.description}</p>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  {selectedProduct.discount_percent > 0 && (
-                    <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
-                      -{selectedProduct.discount_percent}%
-                    </span>
-                  )}
-                  <p className="text-primary font-bold">
-                    Rp {getSelectedPrice().toLocaleString('id-ID')}
-                  </p>
-                  {selectedProduct.discount_percent > 0 && (
-                    <p className="text-text-muted text-sm line-through">
-                      Rp {getOriginalPrice().toLocaleString('id-ID')}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {!isOpen && (
-              <div className="mt-3 bg-red-50 border border-red-100 rounded-xl p-3 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
-                <p className="text-xs font-medium text-red-600">Toko sedang tutup — pesanan belum bisa dibuat</p>
-              </div>
-            )}
-
-            {/* Opsi Ukuran Cup */}
-            {selectedProduct.category !== 'Pastry' && selectedProduct.category !== 'Fore Deli' && (
-              <div className="mt-4">
-                <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2.5">Ukuran Cup</p>
-                <div className="flex gap-2">
-                  {getAvailableSizes(selectedProduct).map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => setOptions((o) => ({ ...o, size: s }))}
-                      className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                        options.size === s
-                          ? 'bg-primary text-white shadow-[0_2px_8px_rgba(0,96,65,0.25)]'
-                          : 'bg-surface-secondary text-text-secondary active:scale-95'
-                      }`}
-                    >
-                      {s}{s === 'Large Ice' && selectedProduct.price_large ? ` +${(selectedProduct.price_large - selectedProduct.price).toLocaleString('id-ID')}` : ''}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Opsi Sweetness */}
-            {selectedProduct.category !== 'Pastry' && (
-              <div className="mt-3">
-                <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2.5">Sweetness</p>
-                <div className="flex gap-2">
-                  {['Normal Sweet', 'Less Sweet'].map((sw) => (
-                    <button
-                      key={sw}
-                      onClick={() => setOptions((o) => ({ ...o, sweetness: sw }))}
-                      className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                        options.sweetness === sw
-                          ? 'bg-primary text-white shadow-[0_2px_8px_rgba(0,96,65,0.25)]'
-                          : 'bg-surface-secondary text-text-secondary active:scale-95'
-                      }`}
-                    >
-                      {sw}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Opsi Ice Cube */}
-            {selectedProduct.category !== 'Pastry' && (
-              <div className="mt-3">
-                <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2.5">Ice Cube</p>
-                <div className="flex gap-2">
-                  {['Normal Ice', 'Less Ice', 'More Ice'].map((ic) => (
-                    <button
-                      key={ic}
-                      onClick={() => setOptions((o) => ({ ...o, iceCube: ic }))}
-                      className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                        options.iceCube === ic
-                          ? 'bg-primary text-white shadow-[0_2px_8px_rgba(0,96,65,0.25)]'
-                          : 'bg-surface-secondary text-text-secondary active:scale-95'
-                      }`}
-                    >
-                      {ic}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <button
-              onClick={handleAddToCart}
-              disabled={!isOpen}
-              className="w-full mt-5 bg-primary text-white py-3 rounded-full font-semibold text-sm active:scale-[0.98] transition-transform shadow-[var(--shadow-float)] disabled:opacity-50 disabled:active:scale-100"
-            >
-              {isOpen ? 'Tambah ke Keranjang' : 'Toko Sedang Tutup'}
-            </button>
-          </div>
-        </div>
+        <ProductOptionsModal
+          product={selectedProduct}
+          variants={productVariants}
+          optionTemplates={productOptionTemplates}
+          storeSettings={settings}
+          isOpen={!!selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+          onAddToCart={handleAddToCart}
+        />
       )}
     </div>
   );

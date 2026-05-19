@@ -20,6 +20,7 @@ const AdminBranch = lazy(() => import('./pages/AdminBranch'));
 const AdminSettings = lazy(() => import('./pages/AdminSettings'));
 const AdminHelp = lazy(() => import('./pages/AdminHelp'));
 const AdminAudit = lazy(() => import('./pages/AdminAudit'));
+const AdminOptionTemplates = lazy(() => import('./pages/AdminOptionTemplates'));
 const SetupWizard = lazy(() => import('./pages/SetupWizard'));
 const Checkout = lazy(() => import('./pages/Checkout'));
 const OrderStatus = lazy(() => import('./pages/OrderStatus'));
@@ -101,9 +102,10 @@ function AppContent() {
         <Route path="/admin/voucher" element={<ProtectedRoute><AdminVoucher /></ProtectedRoute>} />
         <Route path="/admin/branch" element={<ProtectedRoute><AdminBranch /></ProtectedRoute>} />
         <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
-        <Route path="/admin/audit" element={<ProtectedRoute><AdminAudit /></ProtectedRoute>} />
-        <Route path="/admin/help" element={<ProtectedRoute><AdminHelp /></ProtectedRoute>} />
-        <Route path="/admin/setup" element={<ProtectedRoute allowSetup><SetupWizard /></ProtectedRoute>} />
+          <Route path="/admin/audit" element={<ProtectedRoute><AdminAudit /></ProtectedRoute>} />
+          <Route path="/admin/help" element={<ProtectedRoute><AdminHelp /></ProtectedRoute>} />
+          <Route path="/admin/option-templates" element={<ProtectedRoute><AdminOptionTemplates /></ProtectedRoute>} />
+          <Route path="/admin/setup" element={<ProtectedRoute allowSetup><SetupWizard /></ProtectedRoute>} />
 
         <Route path="*" element={<NotFound />} />
       </Routes>

@@ -1,12 +1,41 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, ShoppingBag, User, MessageSquare, Loader2, AlertCircle, Tag, X } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, User, MessageSquare, Loader2, AlertCircle, Tag, X, Mail, MapPin, Phone, Hash, Store } from 'lucide-react';
 import { useCart } from '../lib/CartContext';
 import { useOrders } from '../lib/OrderContext';
 import { useStoreStatus } from '../lib/useStoreStatus';
 import { useVoucher } from '../lib/useVoucher';
 import { checkRateLimit, formatTimeRemaining } from '../lib/rateLimit';
 import { useToast } from '../components/Toast';
+
+/**
+ * Detect fulfillment type from cart items.
+ * - digital: all items are digital products
+ * - delivery: any physical product present
+ * - null: food/beverage only — user picks dine_in or takeaway
+ */
+function detectFulfillmentType(items) {
+  const types = new Set(items.map((i) => i.product?.product_type).filter(Boolean));
+  if (types.has('digital')) return 'digital';
+  if (types.has('physical')) return 'delivery';
+  // food/beverage: let user choose dine_in or takeaway
+  return null;
+}
+
+/** Format item options for display, handling both old and new cart structures */
+function formatItemOptions(item) {
+  // New structure: selectedOptions is an object like { size: 'Large', sweetness: 'Normal' }
+  if (item.selectedOptions && Object.keys(item.selectedOptions).length > 0) {
+    return Object.values(item.selectedOptions).filter(Boolean).join(' · ');
+  }
+  // Old structure: item.options with size/sweetness/iceCube
+  if (item.options) {
+    return [item.options.size, item.options.sweetness, item.options.iceCube].filter(Boolean).join(' · ');
+  }
+  // Variant name fallback
+  if (item.variant?.name) return item.variant.name;
+  return '';
+}
 
 export default function Checkout() {
   const { items, subtotal, totalPrice, appliedVoucher, voucherDiscount, applyVoucher, removeVoucher, clearCart } = useCart();
@@ -23,6 +52,9 @@ export default function Checkout() {
     }
   }, [storeLoading, isOpen, navigate]);
 
+  // Detect fulfillment type from cart content
+  const autoFulfillment = useMemo(() => detectFulfillmentType(items), [items]);
+
   const [name, setName] = useState('');
   const [note, setNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('qris');
@@ -31,6 +63,16 @@ export default function Checkout() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
+
+  // Fulfillment-specific fields
+  const [fulfillmentChoice, setFulfillmentChoice] = useState('dine_in'); // for food/beverage
+  const [tableNumber, setTableNumber] = useState('');
+  const [deliveryEmail, setDeliveryEmail] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryPhone, setDeliveryPhone] = useState('');
+
+  // Resolved fulfillment type: auto-detected or user-chosen
+  const fulfillmentType = autoFulfillment || fulfillmentChoice;
 
   async function handleApplyVoucher() {
     if (!voucherCode.trim()) {
@@ -63,6 +105,26 @@ export default function Checkout() {
     addToast('Voucher dihapus');
   }
 
+  function validateFulfillmentFields() {
+    switch (fulfillmentType) {
+      case 'digital':
+        if (!deliveryEmail.trim()) return 'Email wajib diisi untuk produk digital';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(deliveryEmail.trim())) return 'Format email tidak valid';
+        break;
+      case 'delivery':
+        if (!deliveryAddress.trim()) return 'Alamat pengiriman wajib diisi';
+        if (!deliveryPhone.trim()) return 'Nomor telepon wajib diisi';
+        break;
+      case 'dine_in':
+        if (!tableNumber.trim()) return 'Nomor meja wajib diisi';
+        break;
+      case 'takeaway':
+        // No extra fields needed
+        break;
+    }
+    return null;
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (submittingRef.current) return;
@@ -70,6 +132,13 @@ export default function Checkout() {
 
     if (!name.trim()) {
       setError('Nama wajib diisi');
+      return;
+    }
+
+    // Validate fulfillment-specific fields
+    const fulfillmentError = validateFulfillmentFields();
+    if (fulfillmentError) {
+      setError(fulfillmentError);
       return;
     }
 
@@ -91,6 +160,11 @@ export default function Checkout() {
         note: note.trim(),
         paymentMethod,
         branchId,
+        fulfillmentType,
+        deliveryEmail: fulfillmentType === 'digital' ? deliveryEmail.trim() : null,
+        deliveryAddress: fulfillmentType === 'delivery' ? deliveryAddress.trim() : null,
+        deliveryPhone: fulfillmentType === 'delivery' ? deliveryPhone.trim() : null,
+        tableNumber: fulfillmentType === 'dine_in' ? tableNumber.trim() : null,
       }, appliedVoucher, voucherDiscount);
       clearCart();
       navigate(`/order/${order.id}`);
@@ -148,9 +222,11 @@ export default function Checkout() {
                   <p className="text-sm font-medium text-text-primary truncate">
                     {item.product.name} <span className="text-text-muted">×{item.qty}</span>
                   </p>
-                  <p className="text-xs text-text-muted">
-                    {item.options.size} · {item.options.sweetness} · {item.options.iceCube}
-                  </p>
+                  {formatItemOptions(item) && (
+                    <p className="text-xs text-text-muted">
+                      {formatItemOptions(item)}
+                    </p>
+                  )}
                 </div>
                 <p className="text-sm font-semibold text-text-primary ml-3">
                   Rp {((item.price ?? item.product.price) * item.qty).toLocaleString('id-ID')}
@@ -263,6 +339,104 @@ export default function Checkout() {
               className="w-full px-4 py-2.5 rounded-xl bg-surface-secondary text-sm text-text-primary placeholder:text-text-muted outline-none border border-transparent focus:border-primary/30 resize-none"
             />
           </div>
+
+          {/* Fulfillment Type Selection — only for food/beverage (autoFulfillment is null) */}
+          {autoFulfillment === null && (
+            <div>
+              <p className="text-sm font-semibold text-text-primary mb-2">Tipe Pesanan</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFulfillmentChoice('dine_in')}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                    fulfillmentChoice === 'dine_in'
+                      ? 'bg-primary text-white'
+                      : 'bg-surface-secondary text-text-secondary'
+                  }`}
+                >
+                  <Store size={14} /> Dine In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFulfillmentChoice('takeaway')}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                    fulfillmentChoice === 'takeaway'
+                      ? 'bg-primary text-white'
+                      : 'bg-surface-secondary text-text-secondary'
+                  }`}
+                >
+                  <ShoppingBag size={14} /> Takeaway
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Dine-in: Table Number */}
+          {fulfillmentType === 'dine_in' && (
+            <div>
+              <label className="text-sm font-medium text-text-secondary flex items-center gap-1.5 mb-1.5">
+                <Hash size={14} /> Nomor Meja
+              </label>
+              <input
+                type="text"
+                value={tableNumber}
+                onChange={(e) => setTableNumber(e.target.value)}
+                placeholder="Contoh: 5"
+                maxLength={10}
+                className="w-full px-4 py-2.5 rounded-xl bg-surface-secondary text-sm text-text-primary placeholder:text-text-muted outline-none border border-transparent focus:border-primary/30"
+              />
+            </div>
+          )}
+
+          {/* Digital: Email */}
+          {fulfillmentType === 'digital' && (
+            <div>
+              <label className="text-sm font-medium text-text-secondary flex items-center gap-1.5 mb-1.5">
+                <Mail size={14} /> Email
+              </label>
+              <input
+                type="email"
+                value={deliveryEmail}
+                onChange={(e) => setDeliveryEmail(e.target.value)}
+                placeholder="email@contoh.com"
+                maxLength={100}
+                className="w-full px-4 py-2.5 rounded-xl bg-surface-secondary text-sm text-text-primary placeholder:text-text-muted outline-none border border-transparent focus:border-primary/30"
+              />
+              <p className="text-xs text-text-muted mt-1">Produk digital akan dikirim ke email ini</p>
+            </div>
+          )}
+
+          {/* Delivery: Address + Phone */}
+          {fulfillmentType === 'delivery' && (
+            <>
+              <div>
+                <label className="text-sm font-medium text-text-secondary flex items-center gap-1.5 mb-1.5">
+                  <MapPin size={14} /> Alamat Pengiriman
+                </label>
+                <textarea
+                  value={deliveryAddress}
+                  onChange={(e) => setDeliveryAddress(e.target.value)}
+                  placeholder="Alamat lengkap untuk pengiriman"
+                  rows={3}
+                  maxLength={300}
+                  className="w-full px-4 py-2.5 rounded-xl bg-surface-secondary text-sm text-text-primary placeholder:text-text-muted outline-none border border-transparent focus:border-primary/30 resize-none"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-text-secondary flex items-center gap-1.5 mb-1.5">
+                  <Phone size={14} /> Nomor Telepon
+                </label>
+                <input
+                  type="tel"
+                  value={deliveryPhone}
+                  onChange={(e) => setDeliveryPhone(e.target.value)}
+                  placeholder="08xxxxxxxxxx"
+                  maxLength={20}
+                  className="w-full px-4 py-2.5 rounded-xl bg-surface-secondary text-sm text-text-primary placeholder:text-text-muted outline-none border border-transparent focus:border-primary/30"
+                />
+              </div>
+            </>
+          )}
 
           <div>
             <p className="text-sm font-semibold text-text-primary mb-2">Metode Pembayaran</p>
