@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Clock, Coffee, Package, CheckCircle, ChevronRight, CreditCard, Loader2, Ban, Check, UtensilsCrossed, LogOut, BarChart3, Megaphone, Store, MapPin, Settings, FileText, Tag } from 'lucide-react';
+import { ArrowLeft, Clock, Coffee, Package, CheckCircle, ChevronRight, CreditCard, Loader2, Ban, Check, UtensilsCrossed, LogOut, BarChart3, Megaphone, Store, MapPin, Settings, FileText, Tag, ShoppingBag } from 'lucide-react';
 import { useOrders } from '../lib/OrderContext';
 import { useAuth } from '../lib/useAuth';
 import { useStore } from '../lib/useStore';
 import { useToast } from '../components/Toast';
+import SetupChecklist from '../components/SetupChecklist';
+import EmptyState from '../components/EmptyState';
 import { supabase } from '../lib/supabase';
 
 const STATUSES = ['Semua', 'pending_payment', 'paid', 'preparing', 'ready', 'done', 'cancelled'];
@@ -87,6 +89,10 @@ export default function Admin() {
       </header>
 
       <main className="max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto px-4 mt-4">
+        {settings.hide_checklist !== 'true' && settings.setup_completed === 'true' && (
+          <SetupChecklist />
+        )}
+
         {/* Quick Actions */}
         <section className="mb-4 space-y-3">
           <Link
@@ -151,6 +157,19 @@ export default function Admin() {
             <div className="flex-1">
               <p className="font-semibold text-text-primary text-sm">Kelola Cabang</p>
               <p className="text-xs text-text-muted">Tambah, edit, hapus lokasi cabang</p>
+            </div>
+            <ChevronRight size={16} className="text-text-muted" />
+          </Link>
+          <Link
+            to="/admin/option-templates"
+            className="w-full bg-white rounded-2xl p-4 shadow-[var(--shadow-card)] flex items-center gap-3 active:scale-[0.98] transition-transform"
+          >
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+              <Settings size={20} className="text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-text-primary text-sm">Kelola Template Opsi</p>
+              <p className="text-xs text-text-muted">Template opsi produk yang dapat digunakan ulang</p>
             </div>
             <ChevronRight size={16} className="text-text-muted" />
           </Link>
@@ -257,10 +276,11 @@ export default function Admin() {
               <span className="ml-2 text-text-muted text-sm">Memuat pesanan...</span>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-16">
-              <p className="text-4xl">📋</p>
-              <p className="text-text-muted text-sm mt-2">Belum ada pesanan</p>
-            </div>
+            <EmptyState
+              icon={ShoppingBag}
+              title="Belum ada pesanan"
+              description="Bagikan link toko ke pelanggan untuk mulai menerima pesanan."
+            />
           ) : (
             filtered.map((order) => {
               const config = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending_payment;

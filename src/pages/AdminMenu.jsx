@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Pencil, Trash2, Loader2, Eye, EyeOff, X, Upload } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, Loader2, Eye, EyeOff, X, Upload, Layers, Package } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import EmptyState from '../components/EmptyState';
+import AdminProductVariants from './AdminProductVariants';
 
 export default function AdminMenu() {
   const [products, setProducts] = useState([]);
@@ -12,6 +14,8 @@ export default function AdminMenu() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: '', price: '', category_id: '', description: '', image_url: '', is_available: true, discount_percent: '' });
   const [imageFile, setImageFile] = useState(null);
+  const [showVariants, setShowVariants] = useState(false);
+  const [variantProductId, setVariantProductId] = useState(null);
 
   // Category management
   const [showCatForm, setShowCatForm] = useState(false);
@@ -187,6 +191,14 @@ export default function AdminMenu() {
           <div className="flex items-center justify-center py-16">
             <Loader2 size={24} className="animate-spin text-primary" />
           </div>
+        ) : products.length === 0 ? (
+          <EmptyState
+            icon={Package}
+            title="Belum ada produk"
+            description="Tambah produk pertama untuk mulai jualan. Produk sample bisa diedit sesuai menu Anda."
+            actionLabel="Tambah Produk"
+            onAction={openAdd}
+          />
         ) : (
           <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {products.map((product) => (
@@ -199,8 +211,15 @@ export default function AdminMenu() {
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-semibold text-sm text-text-primary truncate">{product.name}</p>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <p className="font-semibold text-sm text-text-primary truncate">{product.name}</p>
+                        {product.is_starter === true && (
+                          <span className="bg-amber-100 text-amber-700 text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0">
+                            SAMPLE
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-text-muted">{product.categories?.name}</p>
                     </div>
                     <span className="text-primary font-bold text-sm flex-shrink-0">
@@ -236,6 +255,16 @@ export default function AdminMenu() {
                 <X size={18} />
               </button>
             </div>
+
+            {editing && (
+              <button
+                type="button"
+                onClick={() => { setVariantProductId(editing.id); setShowVariants(true); }}
+                className="w-full mb-4 bg-emerald-50 text-primary px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+              >
+                <Layers size={16} /> Kelola Varian
+              </button>
+            )}
 
             <form onSubmit={handleSave} className="space-y-4">
               <div>
@@ -319,6 +348,13 @@ export default function AdminMenu() {
             </form>
           </div>
         </div>
+      )}
+
+      {showVariants && variantProductId && (
+        <AdminProductVariants
+          productId={variantProductId}
+          onClose={() => { setShowVariants(false); setVariantProductId(null); }}
+        />
       )}
     </div>
   );

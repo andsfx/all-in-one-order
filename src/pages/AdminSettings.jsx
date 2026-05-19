@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Palette, QrCode, Lock, Trash2, Info, Upload, Eye, EyeOff, Loader2, HelpCircle, Phone, Check } from 'lucide-react';
+import { ArrowLeft, Palette, QrCode, Lock, Trash2, Info, Upload, Eye, EyeOff, Loader2, HelpCircle, Phone, Check, ShoppingCart, Truck } from 'lucide-react';
 import { useStore } from '../lib/useStore';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
@@ -21,7 +21,7 @@ export default function AdminSettings() {
   const { addToast } = useToast();
 
   // Branding state
-  const [storeName, setStoreName] = useState(settings.store_name || 'Order Kopi');
+  const [storeName, setStoreName] = useState(settings.store_name || 'Toko Saya');
   const [primaryColor, setPrimaryColor] = useState(settings.primary_color || '#006041');
   const [savingBrand, setSavingBrand] = useState(false);
   const [uploadingQris, setUploadingQris] = useState(false);
@@ -36,9 +36,74 @@ export default function AdminSettings() {
   // WhatsApp state
   const [waNumber, setWaNumber] = useState(settings.admin_whatsapp || '');
 
+  // Store settings state
+  const [allowMixedCart, setAllowMixedCart] = useState(settings.allow_mixed_cart === 'true');
+  const [activeFulfillmentTypes, setActiveFulfillmentTypes] = useState(() => {
+    try {
+      return JSON.parse(settings.active_fulfillment_types || '["dine_in","takeaway"]');
+    } catch { return ['dine_in', 'takeaway']; }
+  });
+  const [savingStoreSettings, setSavingStoreSettings] = useState(false);
+
+  // Sample data state
+  const [sampleProductCount, setSampleProductCount] = useState(0);
+  const [sampleCategoryCount, setSampleCategoryCount] = useState(0);
+  const [sampleConfirm, setSampleConfirm] = useState('');
+  const [deletingSamples, setDeletingSamples] = useState(false);
+  const [claimingSamples, setClaimingSamples] = useState(false);
+
   // Reset state
   const [resetConfirm, setResetConfirm] = useState('');
   const [resetting, setResetting] = useState(false);
+
+  useEffect(() => {
+    fetchSampleCounts();
+  }, []);
+
+  async function fetchSampleCounts() {
+    const [{ count: productCount }, { count: categoryCount }] = await Promise.all([
+      supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_starter', true),
+      supabase.from('categories').select('*', { count: 'exact', head: true }).eq('is_starter', true),
+    ]);
+
+    setSampleProductCount(productCount || 0);
+    setSampleCategoryCount(categoryCount || 0);
+  }
+
+  async function handleDeleteSamples() {
+    if (sampleConfirm !== 'SAMPLE') {
+      addToast('Ketik SAMPLE untuk konfirmasi', 'error');
+      return;
+    }
+
+    setDeletingSamples(true);
+    try {
+      await supabase.from('products').delete().eq('is_starter', true);
+      await supabase.from('categories').delete().eq('is_starter', true);
+      setSampleProductCount(0);
+      setSampleCategoryCount(0);
+      setSampleConfirm('');
+      addToast('Semua data sample berhasil dihapus');
+    } catch {
+      addToast('Gagal menghapus data sample', 'error');
+    }
+    setDeletingSamples(false);
+  }
+
+  async function handleClaimSamples() {
+    setClaimingSamples(true);
+    try {
+      await supabase.from('products').update({ is_starter: false }).eq('is_starter', true);
+      await supabase.from('categories').update({ is_starter: false }).eq('is_starter', true);
+      setSampleProductCount(0);
+      setSampleCategoryCount(0);
+      setSampleConfirm('');
+      addToast('Data sample berhasil dijadikan milik Anda');
+    } catch {
+      addToast('Gagal menjadikan data sample milik Anda', 'error');
+    }
+    setClaimingSamples(false);
+  }
 
   async function handleSaveBranding() {
     setSavingBrand(true);
@@ -162,6 +227,25 @@ export default function AdminSettings() {
       addToast('Gagal mereset data', 'error');
     }
     setResetting(false);
+  }
+
+  async function handleSaveStoreSettings() {
+    setSavingStoreSettings(true);
+    await updateSetting('allow_mixed_cart', allowMixedCart ? 'true' : 'false');
+    await updateSetting('active_fulfillment_types', JSON.stringify(activeFulfillmentTypes));
+    setSavingStoreSettings(false);
+    addToast('Pengaturan toko disimpan');
+  }
+
+  function toggleFulfillmentType(type) {
+    setActiveFulfillmentTypes(prev => {
+      if (prev.includes(type)) {
+        // Don't allow removing all types
+        if (prev.length === 1) return prev;
+        return prev.filter(t => t !== type);
+      }
+      return [...prev, type];
+    });
   }
 
   return (
@@ -364,6 +448,100 @@ export default function AdminSettings() {
           </div>
         </section>
 
+        {/* Section: Pengaturan Keranjang */}
+        <section className="bg-white rounded-2xl p-5 shadow-[var(--shadow-card)]">
+          <div className="flex items-center gap-2 mb-4">
+            <ShoppingCart size={18} className="text-primary" />
+            <h2 className="font-semibold text-text-primary text-sm">Pengaturan Keranjang</h2>
+          </div>
+
+          <div className="space-y-4">
+            {/* Mixed Cart Toggle */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1">
+                <label className="text-sm font-medium text-text-primary block mb-1">
+                  Izinkan Produk Campuran
+                </label>
+                <p className="text-xs text-text-muted">
+                  Jika dinonaktifkan, customer hanya bisa order satu jenis produk per keranjang
+                </p>
+              </div>
+              <button
+                onClick={() => setAllowMixedCart(!allowMixedCart)}
+                className={`relative w-12 h-6 rounded-full transition-colors ${
+                  allowMixedCart ? 'bg-primary' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                    allowMixedCart ? 'translate-x-6' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            <button
+              onClick={handleSaveStoreSettings}
+              disabled={savingStoreSettings}
+              className="w-full bg-primary text-white py-2.5 rounded-xl text-sm font-semibold active:scale-[0.98] transition-transform disabled:opacity-60"
+            >
+              {savingStoreSettings ? 'Menyimpan...' : 'Simpan Pengaturan'}
+            </button>
+          </div>
+        </section>
+
+        {/* Section: Tipe Pemenuhan */}
+        <section className="bg-white rounded-2xl p-5 shadow-[var(--shadow-card)]">
+          <div className="flex items-center gap-2 mb-4">
+            <Truck size={18} className="text-primary" />
+            <h2 className="font-semibold text-text-primary text-sm">Tipe Pemenuhan</h2>
+          </div>
+
+          <p className="text-xs text-text-muted mb-4">
+            Pilih metode pemenuhan pesanan yang tersedia untuk customer
+          </p>
+
+          <div className="space-y-3">
+            {[
+              { value: 'dine_in', label: 'Dine-in', desc: 'Makan di tempat' },
+              { value: 'takeaway', label: 'Takeaway', desc: 'Bawa pulang' },
+              { value: 'delivery', label: 'Delivery', desc: 'Antar ke alamat' },
+              { value: 'digital', label: 'Digital', desc: 'Produk digital' }
+            ].map(type => (
+              <label
+                key={type.value}
+                className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                  activeFulfillmentTypes.includes(type.value)
+                    ? 'border-primary bg-surface-accent'
+                    : 'border-border-light bg-surface-secondary'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={activeFulfillmentTypes.includes(type.value)}
+                  onChange={() => toggleFulfillmentType(type.value)}
+                  className="mt-0.5 w-4 h-4 text-primary rounded focus:ring-primary"
+                />
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-text-primary">{type.label}</div>
+                  <div className="text-xs text-text-muted">{type.desc}</div>
+                </div>
+                {activeFulfillmentTypes.includes(type.value) && (
+                  <Check size={16} className="text-primary mt-0.5" />
+                )}
+              </label>
+            ))}
+
+            <button
+              onClick={handleSaveStoreSettings}
+              disabled={savingStoreSettings}
+              className="w-full bg-primary text-white py-2.5 rounded-xl text-sm font-semibold active:scale-[0.98] transition-transform disabled:opacity-60"
+            >
+              {savingStoreSettings ? 'Menyimpan...' : 'Simpan Pengaturan'}
+            </button>
+          </div>
+        </section>
+
         {/* Section 2: Change Password */}
         <section className="bg-white rounded-2xl p-5 shadow-[var(--shadow-card)]">
           <div className="flex items-center gap-2 mb-4">
@@ -408,6 +586,54 @@ export default function AdminSettings() {
             >
               {savingPassword ? 'Menyimpan...' : 'Ubah Password'}
             </button>
+          </div>
+        </section>
+
+        {/* Section: Kelola Data Sample */}
+        <section className="bg-white rounded-2xl p-5 shadow-[var(--shadow-card)]">
+          <div className="flex items-center gap-2 mb-4">
+            <ShoppingCart size={18} className="text-primary" />
+            <h2 className="font-semibold text-text-primary text-sm">Kelola Data Sample</h2>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-4">
+            <p className="text-xs text-amber-700 font-medium">
+              {sampleProductCount === 0 && sampleCategoryCount === 0
+                ? 'Tidak ada data sample'
+                : `${sampleProductCount} produk sample, ${sampleCategoryCount} kategori sample`}
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-text-muted block mb-1.5">
+                Ketik <span className="font-bold text-error">SAMPLE</span> untuk hapus semua data sample
+              </label>
+              <input
+                type="text"
+                value={sampleConfirm}
+                onChange={(e) => setSampleConfirm(e.target.value)}
+                disabled={sampleProductCount === 0 && sampleCategoryCount === 0}
+                className="w-full px-4 py-2.5 rounded-xl bg-surface-secondary text-sm text-text-primary outline-none focus:ring-2 focus:ring-red-500/20 border border-transparent focus:border-red-300 disabled:opacity-50"
+                placeholder="Ketik SAMPLE"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                onClick={handleDeleteSamples}
+                disabled={deletingSamples || sampleConfirm !== 'SAMPLE' || (sampleProductCount === 0 && sampleCategoryCount === 0)}
+                className="w-full bg-error text-white py-2.5 rounded-xl text-sm font-semibold active:scale-[0.98] transition-transform disabled:opacity-50"
+              >
+                {deletingSamples ? 'Menghapus...' : 'Hapus Semua Data Sample'}
+              </button>
+              <button
+                onClick={handleClaimSamples}
+                disabled={claimingSamples || (sampleProductCount === 0 && sampleCategoryCount === 0)}
+                className="w-full bg-primary text-white py-2.5 rounded-xl text-sm font-semibold active:scale-[0.98] transition-transform disabled:opacity-50"
+              >
+                {claimingSamples ? 'Menyimpan...' : 'Jadikan Milik Saya'}
+              </button>
+            </div>
           </div>
         </section>
 
@@ -457,7 +683,7 @@ export default function AdminSettings() {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-sm text-text-secondary">Versi Aplikasi</span>
-              <span className="text-sm font-medium text-text-primary">Order Kopi v1.0</span>
+              <span className="text-sm font-medium text-text-primary">All-in-One Order v1.0</span>
             </div>
             <Link
               to="/admin/help"
