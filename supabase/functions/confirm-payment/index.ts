@@ -32,10 +32,10 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Fetch order with items
+    // Fetch order with items (include new generalized fields)
     const { data: order, error: findError } = await supabase
       .from('orders')
-      .select('*, order_items(product_name, qty, size, sweetness, ice_cube, price_at_order)')
+      .select('*, order_items(product_name, qty, size, sweetness, ice_cube, price_at_order, selected_options, variant_id)')
       .eq('id', order_id)
       .single();
 
@@ -72,6 +72,47 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Handle digital product fulfillment
+    if (order.fulfillment_type === 'digital') {
+      try {
+        // Generate signed download URL for digital products
+        // Assumes digital product files are stored in 'digital-products' bucket
+        // with path pattern: {product_id}/{file_name}
+        // For now, we'll log this as a placeholder since actual file storage setup is TBD
+        console.log(`[Digital Fulfillment] Order ${order_id} requires digital delivery`);
+        
+        // TODO: Implement actual signed URL generation when digital product storage is set up
+        // Example:
+        // const { data: signedUrl, error: urlError } = await supabase.storage
+        //   .from('digital-products')
+        //   .createSignedUrl(order.digital_product_path, 86400); // 24h expiry
+        // 
+        // if (!urlError && signedUrl) {
+        //   await supabase
+        //     .from('orders')
+        //     .update({ digital_download_url: signedUrl.signedUrl })
+        //     .eq('id', order_id);
+        // }
+      } catch (digitalErr) {
+        console.error('[Digital Fulfillment] Error:', digitalErr);
+        // Non-blocking: continue with order confirmation even if digital delivery fails
+      }
+    }
+
+    // Send email notification for digital/delivery orders with email
+    if (order.delivery_email) {
+      try {
+        console.log(`[Email Notification] Sending to ${order.delivery_email} for order ${order_id}`);
+        // TODO: Implement actual email sending (e.g., via Resend, SendGrid, or Supabase Edge Function)
+        // For now, just log
+        console.log(`[Email Mock] Subject: Order ${order_id} Confirmed`);
+        console.log(`[Email Mock] Body: Your order has been confirmed. ${order.fulfillment_type === 'digital' ? 'Download link will be sent shortly.' : ''}`);
+      } catch (emailErr) {
+        console.error('[Email Notification] Error:', emailErr);
+        // Non-blocking
+      }
+    }
+
     // Send Telegram notification
     try {
       const message = formatOrderNotification({
@@ -80,6 +121,7 @@ Deno.serve(async (req) => {
         note: order.note,
         total: order.total,
         payment_method: order.payment_method,
+        fulfillment_type: order.fulfillment_type,
         items: order.order_items,
       });
       await sendTelegramNotification(message);

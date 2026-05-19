@@ -45,19 +45,57 @@ export function formatOrderNotification(order: {
   note: string | null;
   total: number;
   payment_method?: string;
-  items: Array<{ product_name: string; qty: number; size: string; sweetness: string; ice_cube: string; price_at_order: number }>;
+  fulfillment_type?: string;
+  items: Array<{ 
+    product_name: string; 
+    qty: number; 
+    price_at_order: number;
+    selected_options?: Record<string, string> | null;
+    // Legacy fields (nullable for backward compat)
+    size?: string | null;
+    sweetness?: string | null;
+    ice_cube?: string | null;
+  }>;
 }) {
   const itemLines = order.items
-    .map((i) => `  • ${i.product_name} ×${i.qty} (${i.size}, ${i.sweetness}, ${i.ice_cube}) — Rp ${(i.price_at_order * i.qty).toLocaleString('id-ID')}`)
+    .map((i) => {
+      let optionsText = '';
+      
+      // Use selected_options if available (new generalized format)
+      if (i.selected_options && typeof i.selected_options === 'object') {
+        const opts = Object.entries(i.selected_options)
+          .map(([key, val]) => `${key}: ${val}`)
+          .join(', ');
+        optionsText = opts ? ` (${opts})` : '';
+      } 
+      // Fallback to legacy fields for old orders
+      else if (i.size || i.sweetness || i.ice_cube) {
+        const legacy = [i.size, i.sweetness, i.ice_cube].filter(Boolean).join(', ');
+        optionsText = legacy ? ` (${legacy})` : '';
+      }
+
+      return `  • ${i.product_name} ×${i.qty}${optionsText} — Rp ${(i.price_at_order * i.qty).toLocaleString('id-ID')}`;
+    })
     .join('\n');
 
   const paymentLabel = order.payment_method === 'cash' ? '💵 Bayar di Kasir' : '💳 QRIS';
+
+  // Map fulfillment_type to Indonesian labels
+  const fulfillmentLabels: Record<string, string> = {
+    'dine_in': '🍽️ Dine-in',
+    'takeaway': '🥡 Takeaway',
+    'delivery': '🚚 Delivery',
+    'digital': '📥 Digital'
+  };
+  const fulfillmentLabel = order.fulfillment_type 
+    ? fulfillmentLabels[order.fulfillment_type] || '🏷️ Takeaway'
+    : '🏷️ Takeaway';
 
   return `🔔 <b>Pesanan Baru Masuk!</b>
 
 📋 <b>${order.id}</b>
 👤 ${order.customer_name}
-🏷️ Takeaway${order.note ? `\n📝 ${order.note}` : ''}
+${fulfillmentLabel}${order.note ? `\n📝 ${order.note}` : ''}
 
 🛒 <b>Item:</b>
 ${itemLines}
