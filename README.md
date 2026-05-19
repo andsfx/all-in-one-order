@@ -1,6 +1,6 @@
-# Order Kopi
+# All-in-One Order
 
-**Aplikasi pemesanan kopi online untuk coffee shop — siap pakai, mudah dikustomisasi.**
+**Sistem pemesanan online untuk berbagai jenis bisnis — kedai minuman, restoran, toko retail, produk digital.**
 
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev)
@@ -34,6 +34,7 @@
 ## ✨ Highlight
 
 - 🚀 **Production-Ready** — Security hardening, RLS, rate limiting, audit trail
+- 🧙 **Setup Wizard** — Pilih jenis bisnis, otomatis generate kategori & produk sample
 - 💰 **Zero Transaction Fees** — QRIS Static + unique code (save Rp 24M/year)
 - 🤖 **Auto-Verification** — 80%+ orders auto-approved
 - 📱 **Mobile-First** — PWA support, responsive, touch-friendly
@@ -44,9 +45,20 @@
 
 ---
 
+## 🎯 Untuk Siapa?
+
+- ☕ **Kedai Minuman** — Kopi, juice bar, bubble tea
+- 🍽️ **Restoran** — Warung, catering, makanan
+- 🛍️ **Toko Retail** — Pakaian, aksesoris, elektronik
+- 💾 **Produk Digital** — E-book, template, kursus online
+
+Setup wizard otomatis menyesuaikan kategori, template opsi, dan produk sample sesuai jenis bisnis Anda.
+
+---
+
 ## 🏆 vs Kompetitor
 
-| Fitur | Order Kopi | Kompetitor A | Kompetitor B |
+| Fitur | All-in-One Order | Kompetitor A | Kompetitor B |
 |-------|:----------:|:------------:|:------------:|
 | Biaya Setup | **Gratis** | $99/bln | $49/bln |
 | QRIS + Unique Code | ✅ | ❌ | ✅ Via Midtrans |
@@ -62,7 +74,7 @@ Lihat perbandingan lengkap di → [docs/FEATURES.md](docs/FEATURES.md)
 
 ```bash
 git clone <repo-url>
-cd order-kopi
+cd all-in-one-order
 npm install
 ```
 
@@ -104,7 +116,7 @@ npm run dev
 
 ## Demo
 
-**Live Demo:** [https://order-kopi-app.netlify.app](https://order-kopi-app.netlify.app)
+**Live Demo:** [https://all-in-one-order.vercel.app](https://all-in-one-order.vercel.app)
 
 ---
 

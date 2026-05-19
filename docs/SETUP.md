@@ -12,13 +12,92 @@
 
 ```bash
 git clone <repo-url>
-cd order-kopi
+cd all-in-one-order
 npm install
 ```
 
 ---
 
-## Langkah 2: Setup Database (Supabase)
+## Langkah 2a: Local Development (Tanpa Cloud)
+
+Untuk development dan testing tanpa Supabase cloud:
+
+### Prasyarat Tambahan
+- [Docker Desktop](https://docker.com/products/docker-desktop) (harus running)
+
+### Setup Supabase Lokal
+
+```bash
+npx supabase start
+```
+
+Tunggu sampai selesai (pertama kali ~2-5 menit download images). Setelah selesai, akan muncul:
+
+```
+API URL: http://127.0.0.1:54321
+anon key: eyJ...
+service_role key: eyJ...
+Studio URL: http://127.0.0.1:54323
+```
+
+### Isi .env dengan Credentials Lokal
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env`:
+
+```env
+VITE_SUPABASE_URL=http://127.0.0.1:54321
+VITE_SUPABASE_ANON_KEY=<anon key dari output di atas>
+```
+
+### Setup Database
+
+```bash
+npx supabase db reset
+```
+
+Ini akan menjalankan semua migrations + seed data otomatis.
+
+### Buat Admin User
+
+Buka Supabase Studio di http://127.0.0.1:54323:
+1. Buka **Authentication** → **Users**
+2. Klik **"Add user"** → **"Create new user"**
+3. Isi email + password, centang **Auto Confirm**
+
+Atau via SQL di Studio SQL Editor:
+
+```sql
+-- Buat admin user (ganti email/password sesuai keinginan)
+SELECT supabase_auth.create_user(
+  '{"email": "admin@toko.com", "password": "admin123", "email_confirm": true}'
+);
+```
+
+### Jalankan Aplikasi
+
+```bash
+npm run dev
+```
+
+Buka http://localhost:5173
+
+### Stop Supabase Lokal
+
+```bash
+npx supabase stop
+```
+
+> **Catatan**: Data lokal tetap tersimpan selama Docker volume tidak dihapus. Gunakan `npx supabase db reset` untuk reset ke state awal.
+
+---
+
+## Langkah 2b: Setup Database (Supabase Cloud)
+
+> Lewati langkah ini jika menggunakan Supabase lokal (Langkah 2a).
 
 ### Untuk Database Baru:
 
@@ -100,19 +179,22 @@ Buka [http://localhost:5173](http://localhost:5173) di browser.
 1. Buka [http://localhost:5173/login](http://localhost:5173/login)
 2. Login dengan email dan password admin yang dibuat di Langkah 3
 3. Ikuti **Setup Wizard**:
-   - Masukkan nama toko
-   - Upload gambar QRIS (untuk pembayaran)
+   - Pilih jenis bisnis
+   - Masukkan nama toko + WhatsApp
+   - Upload logo (opsional)
+   - Upload QRIS
+   - Pilih tipe pemenuhan
    - Atur jam operasional
-   - Tambahkan cabang pertama
-4. Klik **"Mulai Terima Pesanan"**
-5. Selesai! Toko siap menerima pesanan dari pelanggan.
+   - Tambah cabang pertama
+   - Klik "Buka Toko"
+4. Selesai! Toko siap menerima pesanan dari pelanggan.
 
 ---
 
 ## Struktur Project
 
 ```
-order-kopi/
+all-in-one-order/
 ├── public/              # Static assets (favicon, manifest, QRIS placeholder)
 ├── src/
 │   ├── components/      # Komponen reusable (Cart, Toast, ProductCard, dll)
@@ -134,6 +216,8 @@ order-kopi/
 │   ├── main.jsx         # Entry point
 │   └── index.css        # Tailwind + custom CSS variables
 ├── supabase/
+│   ├── config.toml      # Konfigurasi Supabase lokal
+│   ├── migrations/      # Database migrations
 │   ├── setup.sql        # Database setup (jalankan di SQL Editor)
 │   └── functions/       # Edge Functions (opsional)
 ├── .env.example         # Template environment variables
