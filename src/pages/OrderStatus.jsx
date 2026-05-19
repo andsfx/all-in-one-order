@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getSessionToken } from '../lib/sessionToken';
 import { logOrderCancellation } from '../lib/auditLog';
-import { ArrowLeft, Clock, CheckCircle, ChefHat, Package, Star, Loader2, XCircle, Share2, MessageCircle, CreditCard, Coffee, Search } from 'lucide-react';
+import { ArrowLeft, Clock, CheckCircle, ChefHat, Package, Star, Loader2, XCircle, Share2, MessageCircle, CreditCard, Coffee, Search, Download } from 'lucide-react';
 import { useStore } from '../lib/useStore';
 import { useOrders } from '../lib/OrderContext';
 
@@ -61,6 +61,7 @@ export default function OrderStatus() {
               status: payload.new.status,
               paymentUrl: payload.new.payment_url,
               paymentMethod: payload.new.payment_method || prev.paymentMethod,
+              digitalDownloadUrl: payload.new.digital_download_url || prev.digitalDownloadUrl,
             };
           });
         }
@@ -130,6 +131,9 @@ export default function OrderStatus() {
   }
 
   const currentIdx = STEPS.findIndex((s) => s.key === order.status);
+  const downloadUrl = order.digitalDownloadUrl
+    ? `${order.digitalDownloadUrl}${order.digitalDownloadUrl.includes('?') ? '&' : '?'}session_token=${encodeURIComponent(getSessionToken())}`
+    : null;
 
   return (
     <div className="page-enter min-h-screen bg-white pb-8">
@@ -322,7 +326,10 @@ export default function OrderStatus() {
                     {item.product.name} <span className="text-text-muted">&times;{item.qty}</span>
                   </p>
                   <p className="text-xs text-text-muted">
-                    {item.options.size} &middot; {item.options.sweetness} &middot; {item.options.iceCube}
+                    {item.selectedOptions 
+                      ? Object.entries(item.selectedOptions).map(([k, v]) => `${k}: ${v}`).join(' · ')
+                      : [item.options.size, item.options.sweetness, item.options.iceCube].filter(Boolean).join(' · ')
+                    }
                   </p>
                 </div>
                 <p className="font-semibold text-text-primary">
@@ -346,11 +353,24 @@ export default function OrderStatus() {
           </div>
         </section>
 
+        {/* Digital Download Button */}
+        {order.fulfillmentType === 'digital' && downloadUrl &&
+         (order.status === 'paid' || order.status === 'done') && (
+          <a
+            href={downloadUrl}
+            className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white rounded-xl font-medium text-sm active:scale-[0.98] transition-transform"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Download size={18} /> Unduh Produk
+          </a>
+        )}
+
         {/* Share via WhatsApp */}
         {order.status !== 'cancelled' && (
           <a
             href={`https://wa.me/?text=${encodeURIComponent(
-              `*Pesanan Order Kopi*\n\nOrder ID: ${order.id}\nStatus: ${order.status === 'done' ? 'Selesai' : order.status === 'ready' ? 'Siap diambil' : 'Diproses'}\n\n${order.items.map(i => `• ${i.product.name} x${i.qty} (${i.options.size})`).join('\n')}\n\nTotal: Rp ${order.total.toLocaleString('id-ID')}`
+              `*Pesanan ${settings.store_name}*\n\nOrder ID: ${order.id}\nStatus: ${order.status === 'done' ? 'Selesai' : order.status === 'ready' ? 'Siap diambil' : 'Diproses'}\n\n${order.items.map(i => `• ${i.product.name} x${i.qty} (${i.selectedOptions ? Object.entries(i.selectedOptions).map(([k, v]) => `${k}: ${v}`).join(', ') : [i.options.size, i.options.sweetness, i.options.iceCube].filter(Boolean).join(', ')})`).join('\n')}\n\nTotal: Rp ${order.total.toLocaleString('id-ID')}`
             )}`}
             target="_blank"
             rel="noopener noreferrer"

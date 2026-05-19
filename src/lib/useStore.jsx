@@ -36,7 +36,7 @@ function applyPrimaryColor(hex) {
 
 export function StoreProvider({ children }) {
   const [settings, setSettings] = useState({
-    store_name: 'Order Kopi',
+    store_name: 'Toko Saya',
     store_logo: '',
     primary_color: '#006041',
     qris_image: '/qris.jpg',
@@ -45,6 +45,8 @@ export function StoreProvider({ children }) {
     is_open: 'true',
     setup_completed: 'false',
     admin_whatsapp: '',
+    allow_mixed_cart: 'false',
+    active_fulfillment_types: '["dine_in","takeaway"]',
   });
   const [loading, setLoading] = useState(true);
 

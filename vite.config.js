@@ -9,9 +9,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'Order Kopi',
-        short_name: 'Order Kopi',
-        description: 'Pesan kopi favoritmu dengan mudah dan cepat',
+        name: 'Toko Online',
+        short_name: 'Toko Online',
+        description: 'Pesan produk favoritmu dengan mudah dan cepat',
         theme_color: '#006041',
         background_color: '#FFFFFF',
         display: 'standalone',
