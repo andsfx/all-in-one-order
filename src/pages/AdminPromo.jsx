@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Plus, Pencil, Trash2, Loader2, Eye, EyeOff, X, ArrowUp, ArrowDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { validateRequiredText } from '../lib/validation';
 import { useToast } from '../components/Toast';
 
 const THEMES = [
@@ -54,9 +55,16 @@ export default function AdminPromo() {
     setSaving(true);
 
     try {
+      const titleCheck = validateRequiredText(form.title, { max: 100, label: 'Judul promo' });
+      if (!titleCheck.ok) {
+        addToast(titleCheck.message, 'error');
+        setSaving(false);
+        return;
+      }
+
       const payload = {
-        title: form.title.trim(),
-        subtitle: form.subtitle.trim() || null,
+        title: titleCheck.value,
+        subtitle: form.subtitle.trim().slice(0, 200) || null,
         theme: form.theme,
         image_url: form.image_url.trim() || null,
         is_active: form.is_active,

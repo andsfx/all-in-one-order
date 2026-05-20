@@ -7,6 +7,15 @@ import { useStoreStatus } from '../lib/useStoreStatus';
 import { useVoucher } from '../lib/useVoucher';
 import { checkRateLimit, formatTimeRemaining } from '../lib/rateLimit';
 import { useToast } from '../components/Toast';
+import {
+  validateCustomerName,
+  validateNote,
+  validatePhone,
+  validateEmail,
+  validateAddress,
+  validateTableNumber,
+  validateVoucherCode,
+} from '../lib/validation';
 
 /**
  * Detect fulfillment type from cart items.
@@ -75,14 +84,15 @@ export default function Checkout() {
   const fulfillmentType = autoFulfillment || fulfillmentChoice;
 
   async function handleApplyVoucher() {
-    if (!voucherCode.trim()) {
-      addToast('Masukkan kode voucher', 'error');
+    const voucherValidation = validateVoucherCode(voucherCode);
+    if (!voucherValidation.ok) {
+      addToast(voucherValidation.message, 'error');
       return;
     }
 
     setApplyingVoucher(true);
     try {
-      const { valid, voucher, error: voucherError } = await validateVoucher(voucherCode, subtotal);
+      const { valid, voucher, error: voucherError } = await validateVoucher(voucherValidation.value, subtotal);
       
       if (!valid) {
         addToast(voucherError, 'error');
@@ -93,7 +103,7 @@ export default function Checkout() {
       applyVoucher(voucher, discount);
       addToast(`Voucher ${voucher.code} berhasil digunakan!`);
       setVoucherCode('');
-    } catch (err) {
+    } catch {
       addToast('Gagal memvalidasi voucher', 'error');
     } finally {
       setApplyingVoucher(false);
@@ -107,17 +117,23 @@ export default function Checkout() {
 
   function validateFulfillmentFields() {
     switch (fulfillmentType) {
-      case 'digital':
-        if (!deliveryEmail.trim()) return 'Email wajib diisi untuk produk digital';
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(deliveryEmail.trim())) return 'Format email tidak valid';
+      case 'digital': {
+        const emailResult = validateEmail(deliveryEmail);
+        if (!emailResult.ok) return emailResult.message;
         break;
-      case 'delivery':
-        if (!deliveryAddress.trim()) return 'Alamat pengiriman wajib diisi';
-        if (!deliveryPhone.trim()) return 'Nomor telepon wajib diisi';
+      }
+      case 'delivery': {
+        const addrResult = validateAddress(deliveryAddress);
+        if (!addrResult.ok) return addrResult.message;
+        const phoneResult = validatePhone(deliveryPhone);
+        if (!phoneResult.ok) return phoneResult.message;
         break;
-      case 'dine_in':
-        if (!tableNumber.trim()) return 'Nomor meja wajib diisi';
+      }
+      case 'dine_in': {
+        const tableResult = validateTableNumber(tableNumber);
+        if (!tableResult.ok) return tableResult.message;
         break;
+      }
       case 'takeaway':
         // No extra fields needed
         break;
@@ -130,8 +146,15 @@ export default function Checkout() {
     if (submittingRef.current) return;
     setError('');
 
-    if (!name.trim()) {
-      setError('Nama wajib diisi');
+    const nameResult = validateCustomerName(name);
+    if (!nameResult.ok) {
+      setError(nameResult.message);
+      return;
+    }
+
+    const noteResult = validateNote(note);
+    if (!noteResult.ok) {
+      setError(noteResult.message);
       return;
     }
 
@@ -156,8 +179,8 @@ export default function Checkout() {
       const savedBranch = localStorage.getItem('selected-branch');
       const branchId = savedBranch ? JSON.parse(savedBranch).id : null;
       const order = await placeOrder(items, {
-        name: name.trim(),
-        note: note.trim(),
+        name: nameResult.value,
+        note: noteResult.value,
         paymentMethod,
         branchId,
         fulfillmentType,
@@ -321,7 +344,7 @@ export default function Checkout() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Masukkan nama kamu"
-              maxLength={50}
+              maxLength={100}
               className="w-full px-4 py-2.5 rounded-xl bg-surface-secondary text-sm text-text-primary placeholder:text-text-muted outline-none border border-transparent focus:border-primary/30"
             />
           </div>
@@ -335,7 +358,7 @@ export default function Checkout() {
               onChange={(e) => setNote(e.target.value)}
               placeholder="Contoh: Gula dikit aja ya..."
               rows={3}
-              maxLength={200}
+              maxLength={500}
               className="w-full px-4 py-2.5 rounded-xl bg-surface-secondary text-sm text-text-primary placeholder:text-text-muted outline-none border border-transparent focus:border-primary/30 resize-none"
             />
           </div>
@@ -382,7 +405,7 @@ export default function Checkout() {
                 value={tableNumber}
                 onChange={(e) => setTableNumber(e.target.value)}
                 placeholder="Contoh: 5"
-                maxLength={10}
+                maxLength={2}
                 className="w-full px-4 py-2.5 rounded-xl bg-surface-secondary text-sm text-text-primary placeholder:text-text-muted outline-none border border-transparent focus:border-primary/30"
               />
             </div>

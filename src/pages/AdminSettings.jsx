@@ -4,6 +4,7 @@ import { ArrowLeft, Palette, QrCode, Lock, Trash2, Info, Upload, Eye, EyeOff, Lo
 import { useStore } from '../lib/useStore';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
+import { validateImageMime, ALLOWED_IMAGE_MIMES } from '../lib/validation';
 
 const PRESET_COLORS = [
   { name: 'Hijau Tua', hex: '#006041' },
@@ -117,12 +118,9 @@ export default function AdminSettings() {
 
   async function handleUploadFile(file, key, setUploading) {
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      addToast('File harus berupa gambar', 'error');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      addToast('Ukuran file maksimal 5MB', 'error');
+    const mimeCheck = validateImageMime(file);
+    if (!mimeCheck.ok) {
+      addToast(mimeCheck.message, 'error');
       return;
     }
 
@@ -423,7 +421,7 @@ export default function AdminSettings() {
               {uploadingLogo ? 'Mengupload...' : 'Upload Logo'}
               <input
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 className="hidden"
                 onChange={(e) => handleUploadFile(e.target.files[0], 'store_logo', setUploadingLogo)}
               />
@@ -443,7 +441,7 @@ export default function AdminSettings() {
                   {uploadingQris ? 'Mengupload...' : 'Upload QRIS'}
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp"
                     className="hidden"
                     onChange={(e) => handleUploadFile(e.target.files[0], 'qris_image', setUploadingQris)}
                   />

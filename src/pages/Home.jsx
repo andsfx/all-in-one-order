@@ -6,6 +6,7 @@ import { useStoreStatus } from '../lib/useStoreStatus';
 import { useStore } from '../lib/useStore';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
+import { logError } from '../lib/logError';
 import ProductCard from '../components/ProductCard';
 import FloatingCart from '../components/FloatingCart';
 import CartDrawer from '../components/CartDrawer';
@@ -84,7 +85,7 @@ export default function Home() {
         setProductVariants(variants || []);
         setProductOptionTemplates((templates || []).map((row) => row.option_templates).filter(Boolean));
       } catch (err) {
-        console.error('Error fetching product options:', err);
+        logError(err instanceof Error ? err : new Error(String(err)), { metadata: { source: 'Home.fetchProductOptions', productId: selectedProduct?.id } });
         addToast('Gagal memuat opsi produk');
       }
     }

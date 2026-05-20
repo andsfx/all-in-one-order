@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Filter, Download, Search, Clock, User, FileText, AlertCircle } from 'lucide-react';
 import { getAuditLogs, formatAuditLog, getAuditLogStats } from '../lib/auditLog';
+import { logError } from '../lib/logError';
 
 const ACTION_COLORS = {
   INSERT: 'bg-green-100 text-green-700',
@@ -52,7 +53,7 @@ export default function AdminAudit() {
       setLogs(data);
       setTotalCount(count);
     } catch (error) {
-      console.error('Failed to fetch audit logs:', error);
+      logError(error instanceof Error ? error : new Error(String(error)), { metadata: { source: 'AdminAudit.fetchLogs' } });
     } finally {
       setLoading(false);
     }
@@ -70,7 +71,7 @@ export default function AdminAudit() {
       );
       setStats(statsData);
     } catch (error) {
-      console.error('Failed to fetch stats:', error);
+      logError(error instanceof Error ? error : new Error(String(error)), { metadata: { source: 'AdminAudit.fetchStats' } });
     }
   }
 
