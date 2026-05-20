@@ -16,12 +16,12 @@ export async function generateFromPreset(supabase, businessType, storeName) {
     for (let i = 0; i < preset.categories.length; i++) {
       const cat = preset.categories[i];
 
+      // Check if category exists by name (regardless of is_starter)
       const { data: existing } = await supabase
         .from('categories')
         .select('id')
         .eq('name', cat.name)
-        .eq('is_starter', true)
-        .single();
+        .maybeSingle();
 
       if (existing) {
         categoryIdMap[i] = existing.id;
@@ -49,7 +49,7 @@ export async function generateFromPreset(supabase, businessType, storeName) {
         .from('option_templates')
         .select('id')
         .eq('name', template.name)
-        .single();
+        .maybeSingle();
 
       if (existing) {
         optionTemplateIds.push(existing.id);
@@ -77,12 +77,12 @@ export async function generateFromPreset(supabase, businessType, storeName) {
         return { success: false, error: `Invalid category_index ${product.category_index} for product ${product.name}` };
       }
 
+      // Check if product exists by name (regardless of is_starter)
       const { data: existing } = await supabase
         .from('products')
         .select('id')
         .eq('name', product.name)
-        .eq('is_starter', true)
-        .single();
+        .maybeSingle();
 
       if (existing) continue;
 
