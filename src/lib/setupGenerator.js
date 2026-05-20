@@ -93,7 +93,7 @@ export async function generateFromPreset(supabase, businessType, storeName) {
           price: product.price,
           category_id: categoryId,
           description: product.description || null,
-          image_url: null,
+          image_url: product.image_url || null,
           is_available: true,
           product_type: businessType === 'beverage' ? 'beverage' : businessType === 'food' ? 'food' : businessType === 'physical' ? 'physical' : 'digital',
           discount_percent: product.discount_percent || null,
