@@ -200,14 +200,17 @@ export default function Home() {
             {promos.map((promo) => (
               <div
                 key={promo.id}
-                className="flex-shrink-0 w-[72vw] md:w-[45vw] lg:w-[30vw] max-w-[320px] h-36 rounded-2xl relative overflow-hidden snap-start group"
+                className={`flex-shrink-0 w-[72vw] md:w-[45vw] lg:w-[30vw] max-w-[320px] h-36 rounded-2xl relative overflow-hidden snap-start group bg-gradient-to-br ${promoThemes[promo.theme] || promoThemes.slate}`}
               >
-                <img
-                  src={promo.image_url}
-                  alt={promo.title}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  loading="lazy"
-                />
+                {promo.image_url && (
+                  <img
+                    src={promo.image_url}
+                    alt={promo.title}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90"
+                    loading="lazy"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                 <div className="absolute inset-0 p-4 flex flex-col justify-end z-10">
                   <p className="text-white font-bold text-sm">{promo.title}</p>
