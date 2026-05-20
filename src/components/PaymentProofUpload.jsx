@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Upload, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { logError } from '../lib/logError';
 
 /**
  * Secure Payment Proof Upload Component
@@ -264,7 +265,7 @@ const PaymentProofUpload = ({ onUploadSuccess, onUploadError, expectedAmount, or
       }
       
     } catch (err) {
-      console.error('Upload error:', err);
+      logError(err instanceof Error ? err : new Error(String(err)), { metadata: { source: 'PaymentProofUpload' } });
       setError(err.message);
       setPreview(null);
       

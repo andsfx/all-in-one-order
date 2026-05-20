@@ -6,6 +6,8 @@
  * Tokens expire after 24 hours for security, but auto-refresh on user activity.
  */
 
+import { logError } from './logError';
+
 const SESSION_TOKEN_KEY = 'order_session_token';
 const TOKEN_EXPIRY_KEY = 'order_session_expiry';
 const LAST_ACTIVITY_KEY = 'order_last_activity';
@@ -14,15 +16,26 @@ const ACTIVITY_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes - refresh if active 
 const REFRESH_BUFFER_MS = 2 * 60 * 60 * 1000; // 2 hours - refresh if less than this time remaining
 
 /**
- * Generate a UUID v4 token
+ * Generate a UUID v4 token using crypto-safe random
  * @returns {string} UUID v4 string
  */
 function generateUUID() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
+  // Use native crypto.randomUUID if available
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+  
+  // Fallback: build v4 UUID from crypto.getRandomValues
+  const bytes = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(bytes);
+  
+  // Set version (4) and variant (10xx) bits per RFC 4122
+  bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
+  bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant 10xx
+  
+  // Convert to hex string in UUID format
+  const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
 }
 
 /**
@@ -38,7 +51,7 @@ export function createSessionToken() {
     localStorage.setItem(TOKEN_EXPIRY_KEY, expiry.toString());
     localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
   } catch (error) {
-    console.error('Failed to store session token:', error);
+    logError(error instanceof Error ? error : new Error(String(error)), { metadata: { source: 'sessionToken.createSessionToken' } });
   }
   
   return token;
@@ -87,7 +100,7 @@ export function getSessionToken() {
     // Create new token if none exists or expired
     return createSessionToken();
   } catch (error) {
-    console.error('Failed to get session token:', error);
+    logError(error instanceof Error ? error : new Error(String(error)), { metadata: { source: 'sessionToken.getSessionToken' } });
     // Fallback: generate token without storing
     return generateUUID();
   }
@@ -102,7 +115,7 @@ export function clearSessionToken() {
     localStorage.removeItem(TOKEN_EXPIRY_KEY);
     localStorage.removeItem(LAST_ACTIVITY_KEY);
   } catch (error) {
-    console.error('Failed to clear session token:', error);
+    logError(error instanceof Error ? error : new Error(String(error)), { metadata: { source: 'sessionToken.clearSessionToken' } });
   }
 }
 
@@ -161,7 +174,7 @@ export function refreshTokenExpiry() {
       localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
     }
   } catch (error) {
-    console.error('Failed to refresh token expiry:', error);
+    logError(error instanceof Error ? error : new Error(String(error)), { metadata: { source: 'sessionToken.refreshTokenExpiry' } });
   }
 }
 
@@ -173,7 +186,7 @@ export function recordActivity() {
   try {
     localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
   } catch (error) {
-    console.error('Failed to record activity:', error);
+    logError(error instanceof Error ? error : new Error(String(error)), { metadata: { source: 'sessionToken.recordActivity' } });
   }
 }
 

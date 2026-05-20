@@ -5,6 +5,8 @@
  * within a specific time window. Uses localStorage to track order attempts.
  */
 
+import { logError } from './logError';
+
 const RATE_LIMIT_KEY = 'order_rate_limit';
 const MAX_ORDERS = 5; // Maximum orders allowed per time window
 const WINDOW_MS = 60 * 60 * 1000; // 1 hour time window
@@ -74,7 +76,7 @@ export function checkRateLimit() {
     };
     
   } catch (error) {
-    console.error('Rate limit check failed:', error);
+    logError(error instanceof Error ? error : new Error(String(error)), { metadata: { source: 'rateLimit.checkRateLimit' } });
     // On error, allow the request (fail open)
     return {
       allowed: true,
@@ -119,7 +121,7 @@ export function getRateLimitStatus() {
     };
     
   } catch (error) {
-    console.error('Failed to get rate limit status:', error);
+    logError(error instanceof Error ? error : new Error(String(error)), { metadata: { source: 'rateLimit.getRateLimitStatus' } });
     return {
       count: 0,
       remaining: MAX_ORDERS,
@@ -135,7 +137,7 @@ export function resetRateLimit() {
   try {
     localStorage.removeItem(RATE_LIMIT_KEY);
   } catch (error) {
-    console.error('Failed to reset rate limit:', error);
+    logError(error instanceof Error ? error : new Error(String(error)), { metadata: { source: 'rateLimit.resetRateLimit' } });
   }
 }
 
