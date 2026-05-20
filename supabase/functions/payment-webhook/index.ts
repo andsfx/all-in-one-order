@@ -55,28 +55,17 @@ Deno.serve(async (req) => {
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
     
-    // Timing-safe comparison
-    const receivedSigBuffer = encoder.encode(signature);
-    const expectedSigBuffer = encoder.encode(expectedSignature);
-    
-    // Ensure both buffers are same length to prevent timing attacks
-    if (receivedSigBuffer.length !== expectedSigBuffer.length) {
-      console.error('Invalid webhook signature: length mismatch');
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized: Invalid signature' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Constant-time comparison: no early exit on length mismatch
+    // Pad shorter to max length, XOR accumulate across full span
+    const maxLen = Math.max(signature.length, expectedSignature.length);
+    let diff = signature.length ^ expectedSignature.length; // non-zero if lengths differ
+    for (let i = 0; i < maxLen; i++) {
+      const a = i < signature.length ? signature.charCodeAt(i) : 0;
+      const b = i < expectedSignature.length ? expectedSignature.charCodeAt(i) : 0;
+      diff |= a ^ b;
     }
     
-    // Use XOR comparison for timing-safe validation
-    let isValid = true;
-    for (let i = 0; i < receivedSigBuffer.length; i++) {
-      if (receivedSigBuffer[i] !== expectedSigBuffer[i]) {
-        isValid = false;
-      }
-    }
-    
-    if (!isValid) {
+    if (diff !== 0) {
       console.error('Invalid webhook signature');
       return new Response(
         JSON.stringify({ error: 'Unauthorized: Invalid signature' }),
@@ -89,11 +78,28 @@ Deno.serve(async (req) => {
     const payload = JSON.parse(body);
     console.log('Webhook received:', JSON.stringify(payload));
 
+    // Input validation: ensure required fields present and correct type
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      console.error('Invalid payload structure');
+      return new Response(
+        JSON.stringify({ error: 'Invalid payload' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // bayar.gg webhook callback payload:
     // { event: "payment.paid", invoice_id, status, amount, final_amount, paid_at, customer_name, ... }
-    const paymentId = String(payload.invoice_id || payload.id || payload.payment_id || '');
-    const status = payload.status || '';
-    const event = payload.event || '';
+    const paymentId = String(payload.invoice_id || payload.id || payload.payment_id || '').trim();
+    const status = String(payload.status || '').trim();
+    const event = String(payload.event || '').trim();
+
+    if (!paymentId) {
+      console.error('Missing payment ID in webhook payload');
+      return new Response(
+        JSON.stringify({ error: 'Missing payment ID' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     console.log('Payment ID:', paymentId, 'Status:', status, 'Event:', event);
 
@@ -124,15 +130,16 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Update order status to 'paid'
-    if (order.status === 'pending_payment') {
+    // Update order status to 'paid' with optimistic predicate (close race window)
+    if (order.status === 'pending_payment' || order.status === 'pending_verification') {
       const { error: updateError } = await supabase
         .from('orders')
         .update({
           status: 'paid',
           paid_at: new Date().toISOString(),
         })
-        .eq('id', order.id);
+        .eq('id', order.id)
+        .in('status', ['pending_payment', 'pending_verification']);
 
       if (updateError) {
         console.error('Failed to update order:', updateError);

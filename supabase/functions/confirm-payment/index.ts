@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { sendTelegramNotification, formatOrderNotification } from '../_shared/telegram.ts';
 import { getClientIP, checkRateLimit, rateLimitResponse } from '../_shared/rateLimit.ts';
+import { methodNotAllowed, requireMaintenanceAuth, unauthorizedResponse } from '../_shared/auth.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -13,6 +14,17 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  // Method allowlist: POST only
+  if (req.method !== 'POST') {
+    return methodNotAllowed(corsHeaders);
+  }
+
+  // Require maintenance auth (admin-only endpoint)
+  const auth = requireMaintenanceAuth(req);
+  if (!auth.authorized) {
+    return unauthorizedResponse(auth.error || 'Unauthorized', corsHeaders);
+  }
+
   try {
     // Rate limiting (admin endpoints: allow 30 req/min)
     const clientIP = getClientIP(req);
@@ -21,11 +33,20 @@ Deno.serve(async (req) => {
       return rateLimitResponse(retryAfter, corsHeaders);
     }
 
-    const { order_id } = await req.json();
+    const body = await req.json();
 
-    if (!order_id) {
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
       return new Response(
-        JSON.stringify({ error: 'order_id is required' }),
+        JSON.stringify({ error: 'Invalid request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { order_id } = body;
+
+    if (typeof order_id !== 'string' || order_id.trim().length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'order_id must be a non-empty string' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
