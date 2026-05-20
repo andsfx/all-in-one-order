@@ -719,35 +719,37 @@ export default function AdminSettings() {
         </section>
 
         {/* Section: Reset Demo */}
-        <section className="bg-white rounded-2xl p-5 shadow-[var(--shadow-card)] border border-red-200">
-          <div className="flex items-center gap-2 mb-3">
-            <RotateCcw size={18} className="text-red-500" />
-            <h2 className="font-semibold text-text-primary">Reset Demo</h2>
-          </div>
-          <p className="text-sm text-text-secondary mb-2">
-            Reset seluruh toko ke kondisi awal. Semua data akan dihapus dan Setup Wizard akan muncul kembali.
-          </p>
-          <p className="text-xs text-red-500 mb-4">
-            ⚠️ Semua produk, kategori, pesanan, dan pengaturan akan dihapus permanen.
-          </p>
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              placeholder='Ketik "DEMO" untuk konfirmasi'
-              value={demoResetConfirm}
-              onChange={(e) => setDemoResetConfirm(e.target.value)}
-              className="flex-1 px-3 py-2 border border-border rounded-lg text-sm"
-            />
-            <button
-              onClick={handleResetDemo}
-              disabled={demoResetConfirm !== 'DEMO' || resettingDemo}
-              className="px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg disabled:opacity-50 flex items-center gap-2"
-            >
-              {resettingDemo && <Loader2 size={14} className="animate-spin" />}
-              Reset Demo
-            </button>
-          </div>
-        </section>
+        {import.meta.env.VITE_IS_DEMO === 'true' && (
+          <section className="bg-white rounded-2xl p-5 shadow-[var(--shadow-card)] border border-red-200">
+            <div className="flex items-center gap-2 mb-3">
+              <RotateCcw size={18} className="text-red-500" />
+              <h2 className="font-semibold text-text-primary">Reset Demo</h2>
+            </div>
+            <p className="text-sm text-text-secondary mb-2">
+              Reset seluruh toko ke kondisi awal. Semua data akan dihapus dan Setup Wizard akan muncul kembali.
+            </p>
+            <p className="text-xs text-red-500 mb-4">
+              ⚠️ Semua produk, kategori, pesanan, dan pengaturan akan dihapus permanen.
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                placeholder='Ketik "DEMO" untuk konfirmasi'
+                value={demoResetConfirm}
+                onChange={(e) => setDemoResetConfirm(e.target.value)}
+                className="flex-1 px-3 py-2 border border-border rounded-lg text-sm"
+              />
+              <button
+                onClick={handleResetDemo}
+                disabled={demoResetConfirm !== 'DEMO' || resettingDemo}
+                className="px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg disabled:opacity-50 flex items-center gap-2"
+              >
+                {resettingDemo && <Loader2 size={14} className="animate-spin" />}
+                Reset Demo
+              </button>
+            </div>
+          </section>
+        )}
 
         {/* Section 4: About */}
         <section className="bg-white rounded-2xl p-5 shadow-[var(--shadow-card)]">
