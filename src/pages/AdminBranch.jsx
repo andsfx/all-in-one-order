@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Plus, Pencil, Trash2, Loader2, Eye, EyeOff, X, MapPin } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { validateRequiredText } from '../lib/validation';
 import { useToast } from '../components/Toast';
 
 export default function AdminBranch() {
@@ -46,9 +47,16 @@ export default function AdminBranch() {
     setSaving(true);
 
     try {
+      const nameCheck = validateRequiredText(form.name, { max: 100, label: 'Nama cabang' });
+      if (!nameCheck.ok) {
+        addToast(nameCheck.message, 'error');
+        setSaving(false);
+        return;
+      }
+
       const payload = {
-        name: form.name.trim(),
-        address: form.address.trim() || null,
+        name: nameCheck.value,
+        address: form.address.trim().slice(0, 500) || null,
         is_active: form.is_active,
       };
 

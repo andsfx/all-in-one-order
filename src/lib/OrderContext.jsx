@@ -3,6 +3,7 @@ import { supabase } from './supabase';
 import { getSessionToken } from './sessionToken';
 import { generateUniqueCode } from './generateUniqueCode';
 import { logOrderCreation, logStatusChange } from './auditLog';
+import { logError } from './logError';
 
 const OrderContext = createContext(null);
 
@@ -159,7 +160,7 @@ export function OrderProvider({ children }) {
         });
 
         if (paymentError) {
-          console.error('Failed to create Cashi payment:', paymentError);
+          logError(paymentError instanceof Error ? paymentError : new Error(String(paymentError.message || paymentError)), { metadata: { source: 'OrderContext.placeOrder', type: 'cashi_payment' } });
         } else if (paymentData) {
           const { error: updateError } = await supabase
             .from('orders')
@@ -170,11 +171,11 @@ export function OrderProvider({ children }) {
             .eq('id', orderId);
             
           if (updateError) {
-            console.error('Failed to update order with payment details:', updateError);
+            logError(updateError instanceof Error ? updateError : new Error(String(updateError.message || updateError)), { metadata: { source: 'OrderContext.placeOrder', type: 'payment_update' } });
           }
         }
       } catch (error) {
-        console.error('Error creating Cashi payment:', error);
+        logError(error instanceof Error ? error : new Error(String(error)), { metadata: { source: 'OrderContext.placeOrder', type: 'cashi_payment_catch' } });
       }
     }
 
@@ -214,7 +215,7 @@ export function OrderProvider({ children }) {
       .eq('id', orderId);
 
     if (error) {
-      console.error('Gagal update status:', error);
+      logError(error instanceof Error ? error : new Error(String(error.message || error)), { metadata: { source: 'OrderContext.updateStatus', orderId } });
       return;
     }
 
@@ -273,7 +274,7 @@ export function OrderProvider({ children }) {
       .maybeSingle();
 
     if (error) {
-      console.error('getOrder error:', error);
+      logError(error instanceof Error ? error : new Error(String(error.message || error)), { metadata: { source: 'OrderContext.getOrder', orderId } });
       return null;
     }
     if (!data) return null;
@@ -335,7 +336,7 @@ export function OrderProvider({ children }) {
         storagePath: filePath
       };
     } catch (error) {
-      console.error('Upload payment proof error:', error);
+      logError(error instanceof Error ? error : new Error(String(error)), { metadata: { source: 'OrderContext.uploadPaymentProof' } });
       throw error;
     }
   }
@@ -348,13 +349,13 @@ export function OrderProvider({ children }) {
         .createSignedUrl(filePath, expiresIn);
       
       if (error) {
-        console.error('Error creating signed URL:', error);
+        logError(error instanceof Error ? error : new Error(String(error.message || error)), { metadata: { source: 'OrderContext.getPaymentProofSignedUrl', type: 'rpc_error' } });
         return null;
       }
       
       return data.signedUrl;
     } catch (error) {
-      console.error('Error creating signed URL:', error);
+      logError(error instanceof Error ? error : new Error(String(error)), { metadata: { source: 'OrderContext.getPaymentProofSignedUrl' } });
       return null;
     }
   }

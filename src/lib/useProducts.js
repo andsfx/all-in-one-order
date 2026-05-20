@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './supabase';
+import { logError } from './logError';
 
 export function useProducts() {
   const [products, setProducts] = useState([]);
@@ -44,7 +45,7 @@ export function useProducts() {
         setCategories(['Semua', ...catData.map((c) => c.name)]);
         setProducts(transformedProducts);
       } catch (err) {
-        console.error('Error fetching products:', err);
+        logError(err instanceof Error ? err : new Error(String(err)), { metadata: { source: 'useProducts' } });
         setError(err.message);
       } finally {
         setLoading(false);

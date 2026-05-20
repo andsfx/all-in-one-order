@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Plus, Pencil, Trash2, Loader2, X, Tag, Calendar, Users, TrendingUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { validateVoucherCode, validatePriceInt, validateIntInRange } from '../lib/validation';
 
 export default function AdminVoucher() {
   const [vouchers, setVouchers] = useState([]);
@@ -75,12 +76,38 @@ export default function AdminVoucher() {
     setSaving(true);
 
     try {
+      const codeCheck = validateVoucherCode(form.code);
+      if (!codeCheck.ok) {
+        alert(codeCheck.message);
+        setSaving(false);
+        return;
+      }
+
+      let discountValue = 0;
+      if (form.type !== 'bogo') {
+        if (form.type === 'percentage') {
+          const discCheck = validateIntInRange(form.discount_value, { min: 1, max: 100, label: 'Diskon persen' });
+          if (!discCheck.ok) { alert(discCheck.message); setSaving(false); return; }
+          discountValue = discCheck.value;
+        } else {
+          const discCheck = validatePriceInt(form.discount_value, { min: 1, max: 100_000_000, label: 'Nilai diskon' });
+          if (!discCheck.ok) { alert(discCheck.message); setSaving(false); return; }
+          discountValue = discCheck.value;
+        }
+      }
+
+      const minPurchaseCheck = validatePriceInt(form.min_purchase, { min: 0, max: 100_000_000, label: 'Min. pembelian' });
+      if (!minPurchaseCheck.ok) { alert(minPurchaseCheck.message); setSaving(false); return; }
+
+      const usageLimitCheck = validateIntInRange(form.usage_limit, { min: 1, max: 1_000_000, label: 'Batas penggunaan' });
+      if (!usageLimitCheck.ok) { alert(usageLimitCheck.message); setSaving(false); return; }
+
       const payload = {
-        code: form.code.trim().toUpperCase(),
+        code: codeCheck.value,
         type: form.type,
-        discount_value: form.type === 'bogo' ? 0 : parseInt(form.discount_value, 10),
-        min_purchase: parseInt(form.min_purchase, 10),
-        usage_limit: parseInt(form.usage_limit, 10),
+        discount_value: discountValue,
+        min_purchase: minPurchaseCheck.value,
+        usage_limit: usageLimitCheck.value,
         valid_from: new Date(form.valid_from).toISOString(),
         valid_to: new Date(form.valid_to).toISOString(),
         is_active: form.is_active,

@@ -39,14 +39,3 @@ export function getCorsHeaders(req: Request): Record<string, string> {
     'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
   };
 }
-
-/**
- * Legacy static corsHeaders for backward compatibility.
- * WARNING: Use getCorsHeaders(req) for dynamic origin validation.
- * This uses '*' only as a fallback for non-browser requests (no Origin header).
- */
-export const corsHeaders: Record<string, string> = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-session-token',
-  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
-};

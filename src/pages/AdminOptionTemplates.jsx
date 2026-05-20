@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Plus, Pencil, Trash2, Loader2, X, Layers } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { validateRequiredText } from '../lib/validation';
 import { useToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
 
@@ -62,8 +63,9 @@ export default function AdminOptionTemplates() {
 
     try {
       // Validate
-      if (!form.name.trim()) {
-        addToast('Nama template wajib diisi', 'error');
+      const nameCheck = validateRequiredText(form.name, { max: 100, label: 'Nama template' });
+      if (!nameCheck.ok) {
+        addToast(nameCheck.message, 'error');
         setSaving(false);
         return;
       }

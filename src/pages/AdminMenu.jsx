@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Plus, Pencil, Trash2, Loader2, Eye, EyeOff, X, Upload, Layers, Package } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { validateRequiredText, validatePriceInt, validateDiscountPercent, validateImageMime } from '../lib/validation';
 import EmptyState from '../components/EmptyState';
 import AdminProductVariants from './AdminProductVariants';
 
@@ -58,6 +59,11 @@ export default function AdminMenu() {
   }
 
   async function uploadImage(file) {
+    const mimeCheck = validateImageMime(file);
+    if (!mimeCheck.ok) {
+      alert(mimeCheck.message);
+      throw new Error(mimeCheck.message);
+    }
     const ext = file.name.split('.').pop();
     const fileName = `${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from('product-images').upload(fileName, file);
@@ -71,19 +77,40 @@ export default function AdminMenu() {
     setSaving(true);
 
     try {
+      const nameCheck = validateRequiredText(form.name, { max: 200, label: 'Nama produk' });
+      if (!nameCheck.ok) {
+        alert(nameCheck.message);
+        setSaving(false);
+        return;
+      }
+
+      const priceCheck = validatePriceInt(form.price, { min: 0, max: 100_000_000, label: 'Harga' });
+      if (!priceCheck.ok) {
+        alert(priceCheck.message);
+        setSaving(false);
+        return;
+      }
+
+      const discountCheck = validateDiscountPercent(form.discount_percent, { allowEmpty: true });
+      if (!discountCheck.ok) {
+        alert(discountCheck.message);
+        setSaving(false);
+        return;
+      }
+
       let imageUrl = form.image_url;
       if (imageFile) {
         imageUrl = await uploadImage(imageFile);
       }
 
       const payload = {
-        name: form.name.trim(),
-        price: parseInt(form.price, 10),
+        name: nameCheck.value,
+        price: priceCheck.value,
         category_id: parseInt(form.category_id, 10),
         description: form.description.trim() || null,
         image_url: imageUrl || null,
         is_available: form.is_available,
-        discount_percent: form.discount_percent ? parseInt(form.discount_percent, 10) : null,
+        discount_percent: discountCheck.value,
       };
 
       if (editing) {
@@ -328,7 +355,7 @@ export default function AdminMenu() {
                 <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-secondary border border-transparent cursor-pointer text-sm text-text-secondary">
                   <Upload size={14} />
                   {imageFile ? imageFile.name : 'Pilih gambar...'}
-                  <input type="file" accept="image/*" className="hidden" onChange={(e) => setImageFile(e.target.files[0] || null)} />
+                  <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => setImageFile(e.target.files[0] || null)} />
                 </label>
                 <p className="text-xs text-text-muted mt-1">Atau masukkan URL gambar:</p>
                 <input type="url" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..."

@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { checkFraud } from '../_shared/fraudDetection.ts';
 import { getClientIP, checkRateLimit, rateLimitResponse } from '../_shared/rateLimit.ts';
+import { methodNotAllowed } from '../_shared/auth.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -21,6 +22,11 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  // Method allowlist: POST only
+  if (req.method !== 'POST') {
+    return methodNotAllowed(corsHeaders);
+  }
+
   try {
     // Rate limiting
     const clientIP = getClientIP(req);
@@ -30,10 +36,28 @@ Deno.serve(async (req) => {
     }
 
     const body: VerifyPaymentRequest = await req.json();
-    const { orderId, paymentProofUrl, paymentProofPath, amountEntered, sessionToken } = body;
 
     // Validate inputs
-    if (!orderId || !paymentProofUrl || !amountEntered || !sessionToken) {
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid request body',
+          auto_verified: false,
+          needs_manual_review: false
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { orderId, paymentProofUrl, paymentProofPath, amountEntered, sessionToken } = body;
+
+    if (
+      typeof orderId !== 'string' || orderId.trim().length === 0 ||
+      typeof paymentProofUrl !== 'string' || paymentProofUrl.trim().length === 0 ||
+      (paymentProofPath !== undefined && typeof paymentProofPath !== 'string') ||
+      typeof amountEntered !== 'number' || !Number.isFinite(amountEntered) || amountEntered <= 0 ||
+      typeof sessionToken !== 'string' || sessionToken.trim().length === 0
+    ) {
       return new Response(
         JSON.stringify({ 
           error: 'Invalid request parameters',
@@ -129,7 +153,8 @@ Deno.serve(async (req) => {
           needs_manual_review: true,
           fraud_score: 0
         })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .in('status', ['pending_payment', 'pending_verification']);
 
       // Log to audit_logs
       await supabase

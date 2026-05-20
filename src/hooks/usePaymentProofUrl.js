@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { logError } from '../lib/logError';
 
 /**
  * Custom hook to get signed URL for payment proof
@@ -25,13 +26,13 @@ export function usePaymentProofUrl(paymentProofUrl, paymentProofPath) {
             .createSignedUrl(paymentProofPath, 3600); // 1 hour expiry
           
           if (error) {
-            console.error('Error creating signed URL:', error);
+            logError(error instanceof Error ? error : new Error(String(error.message || error)), { metadata: { source: 'usePaymentProofUrl', type: 'signed_url_error' } });
             setSignedUrl(null);
           } else {
             setSignedUrl(data.signedUrl);
           }
         } catch (error) {
-          console.error('Error creating signed URL:', error);
+          logError(error instanceof Error ? error : new Error(String(error)), { metadata: { source: 'usePaymentProofUrl' } });
           setSignedUrl(null);
         }
       } 

@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { logError } from './logError';
 
 export function useVoucher() {
   /**
@@ -21,7 +22,7 @@ export function useVoucher() {
       });
 
       if (error) {
-        console.error('Voucher validation RPC error:', error);
+        logError(error instanceof Error ? error : new Error(String(error.message || error)), { metadata: { source: 'useVoucher.validateVoucher', type: 'rpc_error' } });
         return { valid: false, voucher: null, error: 'Gagal memvalidasi voucher' };
       }
 
@@ -43,7 +44,7 @@ export function useVoucher() {
 
       return { valid: true, voucher, error: null };
     } catch (err) {
-      console.error('Voucher validation error:', err);
+      logError(err instanceof Error ? err : new Error(String(err)), { metadata: { source: 'useVoucher.validateVoucher' } });
       return { valid: false, voucher: null, error: 'Gagal memvalidasi voucher' };
     }
   }

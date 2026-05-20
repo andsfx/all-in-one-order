@@ -6,6 +6,7 @@
  */
 
 import { supabase } from './supabase';
+import { logError } from './logError';
 
 /**
  * Log an order change to the audit log
@@ -48,13 +49,13 @@ export async function logOrderChange({
     });
 
     if (error) {
-      console.error('Failed to log audit entry:', error);
+      logError(error instanceof Error ? error : new Error(String(error.message || error)), { metadata: { source: 'auditLog.logOrderChange', type: 'rpc_error' } });
       return null;
     }
 
     return data;
   } catch (error) {
-    console.error('Audit logging error:', error);
+    logError(error instanceof Error ? error : new Error(String(error)), { metadata: { source: 'auditLog.logOrderChange' } });
     return null;
   }
 }
@@ -161,13 +162,13 @@ export async function getOrderAuditLogs(orderId, limit = 50) {
       .limit(limit);
 
     if (error) {
-      console.error('Failed to fetch audit logs:', error);
+      logError(error instanceof Error ? error : new Error(String(error.message || error)), { metadata: { source: 'auditLog.getOrderAuditLogs' } });
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error fetching audit logs:', error);
+    logError(error instanceof Error ? error : new Error(String(error)), { metadata: { source: 'auditLog.getOrderAuditLogs' } });
     return [];
   }
 }
@@ -211,13 +212,13 @@ export async function getAuditLogs(page = 0, pageSize = 50, filters = {}) {
       .range(from, to);
 
     if (error) {
-      console.error('Failed to fetch audit logs:', error);
+      logError(error instanceof Error ? error : new Error(String(error.message || error)), { metadata: { source: 'auditLog.getAuditLogs' } });
       return { data: [], count: 0 };
     }
 
     return { data: data || [], count: count || 0 };
   } catch (error) {
-    console.error('Error fetching audit logs:', error);
+    logError(error instanceof Error ? error : new Error(String(error)), { metadata: { source: 'auditLog.getAuditLogs' } });
     return { data: [], count: 0 };
   }
 }
@@ -267,7 +268,7 @@ export async function getAuditLogStats(dateFrom, dateTo) {
       .lte('created_at', dateTo);
 
     if (error) {
-      console.error('Failed to fetch audit log stats:', error);
+      logError(error instanceof Error ? error : new Error(String(error.message || error)), { metadata: { source: 'auditLog.getAuditLogStats' } });
       return null;
     }
 
@@ -288,7 +289,7 @@ export async function getAuditLogStats(dateFrom, dateTo) {
 
     return stats;
   } catch (error) {
-    console.error('Error calculating audit log stats:', error);
+    logError(error instanceof Error ? error : new Error(String(error)), { metadata: { source: 'auditLog.getAuditLogStats' } });
     return null;
   }
 }
