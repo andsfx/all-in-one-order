@@ -44,3 +44,5 @@ supabase/.temp/
 # Temp files
 temp_*.txt
 temp_*.sql
+
+.vercel

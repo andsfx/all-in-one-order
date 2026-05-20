@@ -205,3 +205,63 @@ Jika client butuh custom code:
 1. Fork repo untuk client tersebut
 2. Deploy fork ke Vercel project client
 3. Disconnect dari main repo
+
+---
+
+## Demo Mode
+
+Untuk keperluan demo/showcase ke calon client:
+
+### Setup Demo Instance
+
+1. Buat 1 Supabase project khusus demo (contoh: `all-in-one-order-demo`)
+2. Run `setup.sql` + migrations 017, 018, 019
+3. Buat admin user: `demo@demo.com` / `demo123`
+4. Deploy ke Vercel dengan env vars demo project
+5. Share URL ke calon client
+
+### Demo Account
+
+```
+URL: https://all-in-one-order.vercel.app
+Admin: https://all-in-one-order.vercel.app/login
+Email: demo@demo.com
+Password: demo123
+```
+
+### Reset Demo
+
+Setelah calon client selesai explore, reset ke kondisi awal:
+
+**Via UI (recommended):**
+1. Login admin
+2. Buka **Pengaturan**
+3. Scroll ke bagian "Reset Demo"
+4. Ketik `DEMO` → klik "Reset Demo"
+5. Wizard akan muncul kembali
+
+**Via SQL (manual):**
+```sql
+DELETE FROM product_option_templates;
+DELETE FROM order_items;
+DELETE FROM orders;
+DELETE FROM product_variants;
+DELETE FROM products;
+DELETE FROM option_templates;
+DELETE FROM categories;
+UPDATE order_counter SET last_number = 0 WHERE id = 1;
+DELETE FROM store_settings WHERE key NOT IN ('admin_whatsapp', 'primary_color');
+INSERT INTO store_settings (key, value) VALUES
+  ('store_name', 'Toko Saya'),
+  ('is_open', 'true'),
+  ('open_hour', '07:00'),
+  ('close_hour', '22:00')
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+```
+
+### Tips Demo
+
+- Jalankan wizard lengkap di depan calon client (impress mereka dengan auto-generate)
+- Tunjukkan customer view di tab terpisah
+- Buat 1 test order untuk demo flow pesanan
+- Reset setelah selesai untuk visitor berikutnya

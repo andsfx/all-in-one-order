@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Palette, QrCode, Lock, Trash2, Info, Upload, Eye, EyeOff, Loader2, HelpCircle, Phone, Check, ShoppingCart, Truck } from 'lucide-react';
+import { ArrowLeft, Palette, QrCode, Lock, Trash2, Info, Upload, Eye, EyeOff, Loader2, HelpCircle, Phone, Check, ShoppingCart, Truck, RotateCcw } from 'lucide-react';
 import { useStore } from '../lib/useStore';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
@@ -55,6 +55,8 @@ export default function AdminSettings() {
   // Reset state
   const [resetConfirm, setResetConfirm] = useState('');
   const [resetting, setResetting] = useState(false);
+  const [demoResetConfirm, setDemoResetConfirm] = useState('');
+  const [resettingDemo, setResettingDemo] = useState(false);
 
   useEffect(() => {
     fetchSampleCounts();
@@ -227,6 +229,49 @@ export default function AdminSettings() {
       addToast('Gagal mereset data', 'error');
     }
     setResetting(false);
+  }
+
+  async function handleResetDemo() {
+    if (demoResetConfirm !== 'DEMO') {
+      addToast('Ketik DEMO untuk konfirmasi', 'error');
+      return;
+    }
+
+    setResettingDemo(true);
+    try {
+      // Delete in correct order (foreign key constraints)
+      await supabase.from('product_option_templates').delete().neq('product_id', 0);
+      await supabase.from('order_items').delete().neq('id', 0);
+      await supabase.from('orders').delete().neq('id', '');
+      await supabase.from('product_variants').delete().neq('id', 0);
+      await supabase.from('products').delete().neq('id', 0);
+      await supabase.from('option_templates').delete().neq('id', 0);
+      await supabase.from('categories').delete().neq('id', 0);
+      await supabase.from('order_counter').update({ last_number: 0 }).eq('id', 1);
+      
+      // Reset store settings to defaults (keep only essential ones)
+      const keepKeys = ['admin_whatsapp', 'primary_color'];
+      await supabase.from('store_settings').delete().not('key', 'in', `(${keepKeys.join(',')})`);
+      
+      // Re-insert essential defaults
+      await supabase.from('store_settings').upsert([
+        { key: 'store_name', value: 'Toko Saya' },
+        { key: 'is_open', value: 'true' },
+        { key: 'open_hour', value: '07:00' },
+        { key: 'close_hour', value: '22:00' },
+      ]);
+
+      setDemoResetConfirm('');
+      addToast('Demo berhasil direset. Redirecting ke Setup Wizard...');
+      
+      // Redirect to setup wizard after short delay
+      setTimeout(() => {
+        window.location.href = '/admin/setup';
+      }, 1500);
+    } catch (err) {
+      addToast('Gagal mereset demo: ' + (err.message || 'Unknown error'), 'error');
+    }
+    setResettingDemo(false);
   }
 
   async function handleSaveStoreSettings() {
@@ -669,6 +714,37 @@ export default function AdminSettings() {
               className="w-full bg-error text-white py-2.5 rounded-xl text-sm font-semibold active:scale-[0.98] transition-transform disabled:opacity-50"
             >
               {resetting ? 'Mereset...' : 'Reset Semua Data'}
+            </button>
+          </div>
+        </section>
+
+        {/* Section: Reset Demo */}
+        <section className="bg-white rounded-2xl p-5 shadow-[var(--shadow-card)] border border-red-200">
+          <div className="flex items-center gap-2 mb-3">
+            <RotateCcw size={18} className="text-red-500" />
+            <h2 className="font-semibold text-text-primary">Reset Demo</h2>
+          </div>
+          <p className="text-sm text-text-secondary mb-2">
+            Reset seluruh toko ke kondisi awal. Semua data akan dihapus dan Setup Wizard akan muncul kembali.
+          </p>
+          <p className="text-xs text-red-500 mb-4">
+            ⚠️ Semua produk, kategori, pesanan, dan pengaturan akan dihapus permanen.
+          </p>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder='Ketik "DEMO" untuk konfirmasi'
+              value={demoResetConfirm}
+              onChange={(e) => setDemoResetConfirm(e.target.value)}
+              className="flex-1 px-3 py-2 border border-border rounded-lg text-sm"
+            />
+            <button
+              onClick={handleResetDemo}
+              disabled={demoResetConfirm !== 'DEMO' || resettingDemo}
+              className="px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg disabled:opacity-50 flex items-center gap-2"
+            >
+              {resettingDemo && <Loader2 size={14} className="animate-spin" />}
+              Reset Demo
             </button>
           </div>
         </section>
