@@ -17,6 +17,12 @@
 | ![Menu](screenshots/menu.png) | ![Order Status](screenshots/order-status.png) | ![Rating](screenshots/rating.png) |
 | Browse menu dengan kategori, search, dan filter | Track pesanan real-time dengan estimasi waktu | Berikan rating dan review setelah pesanan selesai |
 
+### Setup Wizard
+| Pilih Jenis Bisnis | Ringkasan Setup |
+|--------------------|-----------------|
+| ![Setup Wizard](screenshots/setup-wizard.png) | ![Setup Summary](screenshots/setup-summary.png) |
+| Client pilih jenis bisnis tanpa teknis | Sistem siapkan toko, kategori, dan produk starter |
+
 ### Admin Dashboard
 | Dashboard | Kelola Menu | Laporan Penjualan |
 |-----------|-------------|-------------------|
