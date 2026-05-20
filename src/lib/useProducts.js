@@ -24,7 +24,7 @@ export function useProducts() {
         // Fetch products (only available)
         const { data: prodData, error: prodError } = await supabase
           .from('products')
-          .select('id, name, price, price_large, description, image_url, category_id, discount_percent, categories(name)')
+          .select('id, name, price, description, image_url, category_id, discount_percent, categories(name)')
           .eq('is_available', true)
           .order('id');
 
@@ -35,7 +35,6 @@ export function useProducts() {
           id: p.id,
           name: p.name,
           price: p.price,
-          price_large: p.price_large,
           description: p.description,
           image_url: p.image_url,
           category: p.categories?.name || 'Lainnya',
